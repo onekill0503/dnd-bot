@@ -13,6 +13,12 @@ export const execute = async (interaction: any) => {
       await handleJoinSession(interaction);
     } else if (interaction.customId.startsWith('show_stats_')) {
       await handleShowStats(interaction);
+    } else if (interaction.customId === 'player_action') {
+      await handlePlayerAction(interaction);
+    } else if (interaction.customId === 'cast_spell') {
+      await handleCastSpell(interaction);
+    } else if (interaction.customId === 'generate_encounter') {
+      await handleGenerateEncounter(interaction);
     }
   } catch (error) {
     logger.error('Error handling button interaction:', error);
@@ -94,7 +100,26 @@ async function handleShowStats(interaction: ButtonInteraction) {
     const sessionId = interaction.channelId;
     const openaiService = new OpenAIService();
     
-    const character = openaiService.getCharacter(sessionId, userId);
+    // First try to get character using text channel ID (for backward compatibility)
+    let character = await openaiService.getCharacter(sessionId, userId);
+    
+    // If not found, try to find the session in Redis and use voice channel ID
+    if (!character) {
+      const sessionManager = (interaction.client as any).sessionManager;
+      const allSessions = await sessionManager.getAllSessions();
+      const redisSession = allSessions.find((session: any) => 
+        session.participants.includes(userId) || 
+        session.guildId === interaction.guildId
+      );
+      
+      if (redisSession) {
+        // Load session from Redis using voice channel ID
+        const session = await openaiService.getSessionStatus(redisSession.channelId);
+        if (session) {
+          character = session.players.get(userId) || null;
+        }
+      }
+    }
     
     if (!character) {
       await interaction.reply({
@@ -132,6 +157,110 @@ async function handleShowStats(interaction: ButtonInteraction) {
     logger.error('Error showing character stats:', error);
     await interaction.reply({
       content: 'There was an error showing character stats. Please try again.',
+      flags: 64 // Ephemeral flag
+    });
+  }
+}
+
+async function handlePlayerAction(interaction: ButtonInteraction) {
+  try {
+    // Create modal for player action
+    const modal = new ModalBuilder()
+      .setCustomId('player_action_modal')
+      .setTitle('Perform Action');
+
+    const actionInput = new TextInputBuilder()
+      .setCustomId('action_description')
+      .setLabel('What do you want to do?')
+      .setStyle(TextInputStyle.Paragraph)
+      .setPlaceholder('Describe your character\'s action in detail...')
+      .setRequired(true)
+      .setMaxLength(1000);
+
+    const actionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(actionInput);
+    modal.addComponents(actionRow);
+
+    await interaction.showModal(modal);
+  } catch (error) {
+    logger.error('Error in player action button:', error);
+    await interaction.reply({
+      content: 'There was an error creating the action form. Please try again.',
+      flags: 64 // Ephemeral flag
+    });
+  }
+}
+
+async function handleCastSpell(interaction: ButtonInteraction) {
+  try {
+    // Create modal for spell casting
+    const modal = new ModalBuilder()
+      .setCustomId('cast_spell_modal')
+      .setTitle('Cast Spell');
+
+    const spellNameInput = new TextInputBuilder()
+      .setCustomId('spell_name')
+      .setLabel('Spell Name')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('Enter the name of the spell to cast')
+      .setRequired(true)
+      .setMaxLength(50);
+
+    const spellLevelInput = new TextInputBuilder()
+      .setCustomId('spell_level')
+      .setLabel('Spell Level (0 for cantrips)')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('0')
+      .setRequired(true)
+      .setMaxLength(1);
+
+    const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(spellNameInput);
+    const secondActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(spellLevelInput);
+
+    modal.addComponents(firstActionRow, secondActionRow);
+
+    await interaction.showModal(modal);
+  } catch (error) {
+    logger.error('Error in cast spell button:', error);
+    await interaction.reply({
+      content: 'There was an error creating the spell casting form. Please try again.',
+      flags: 64 // Ephemeral flag
+    });
+  }
+}
+
+async function handleGenerateEncounter(interaction: ButtonInteraction) {
+  try {
+    // Create modal for encounter generation
+    const modal = new ModalBuilder()
+      .setCustomId('generate_encounter_modal')
+      .setTitle('Generate Encounter');
+
+    const encounterTypeInput = new TextInputBuilder()
+      .setCustomId('encounter_type')
+      .setLabel('Encounter Type')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('combat, social, exploration, puzzle')
+      .setRequired(true)
+      .setMaxLength(20);
+
+    const difficultyInput = new TextInputBuilder()
+      .setCustomId('difficulty')
+      .setLabel('Difficulty')
+      .setStyle(TextInputStyle.Short)
+      .setPlaceholder('easy, medium, hard, deadly')
+      .setRequired(false)
+      .setMaxLength(10);
+
+    const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(encounterTypeInput);
+    const secondActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(difficultyInput);
+
+    modal.addComponents(firstActionRow, secondActionRow);
+
+    await interaction.showModal(modal);
+  } catch (error) {
+    logger.error('Error in generate encounter button:', error);
+    await interaction.reply({
+      content: 'There was an error creating the encounter form. Please try again.',
       flags: 64 // Ephemeral flag
     });
   }
