@@ -1,0 +1,27 @@
+{
+  "name": "dnd-bot",
+  "version": "1.0.0",
+  "description": "A Discord bot for D&D sessions with AI-powered Dungeon Master",
+  "main": "index.ts",
+  "scripts": {
+    "start": "bun run index.ts",
+    "dev": "bun --watch index.ts",
+    "deploy": "bun run src/deploy-commands.ts",
+    "build": "bun build index.ts --outdir dist"
+  },
+  "dependencies": {
+    "discord.js": "^14.14.1",
+    "openai": "^4.28.0",
+    "@discordjs/voice": "^0.16.1",
+    "@discordjs/opus": "^0.9.0",
+    "sodium": "^3.0.2",
+    "libsodium-wrappers": "^0.7.13"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "typescript": "^5.3.3"
+  },
+  "keywords": ["discord", "bot", "dnd", "dungeons-dragons", "ai", "openai"],
+  "author": "Your Name",
+  "license": "MIT"
+}
