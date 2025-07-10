@@ -39,24 +39,66 @@ A comprehensive Discord bot for Dungeons & Dragons 5e gameplay with AI-powered s
 - **Text-to-Speech**: Converts story text to voice narration
 - **Multi-language Voice**: Supports different languages for narration
 - **Voice Channel Integration**: Automatic voice channel detection
+- **ElevenLabs Integration**: High-quality voice synthesis with expression support
+- **Expression Parsing**: Supports voice expressions like [sarcastically], [whispers], [giggles]
 
 ## Installation
+
+### Option 1: Docker (Recommended)
+
+1. Clone the repository
+2. Copy the environment example file:
+   ```bash
+   cp env.example .env
+   ```
+3. Edit `.env` file with your configuration
+4. Run with Docker Compose:
+   ```bash
+   docker-compose up -d
+   ```
+
+### Option 2: Local Development
 
 1. Clone the repository
 2. Install dependencies:
    ```bash
-   npm install
+   bun install
    ```
 3. Set up environment variables:
    ```env
    DISCORD_TOKEN=your_discord_token
    OPENAI_API_KEY=your_openai_api_key
-   REDIS_URL=your_redis_url
+   REDIS_PASSWORD=your_redis_password
+   
+   # Optional: ElevenLabs TTS Integration
+   ELEVEN_LABS_KEY=your_elevenlabs_api_key
+   USE_ELEVEN=true
+   ELEVEN_LABS_DEFAULT_VOICE_ID=pNInz6obpgDQGcFmaJgB
+   ELEVEN_LABS_MODEL_ID=eleven_v3
    ```
 4. Run the bot:
    ```bash
-   npm start
+   bun run index.ts
    ```
+
+### Docker Commands
+
+```bash
+# Start the services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f dnd-bot
+
+# Stop services
+docker-compose down
+
+# Rebuild and restart
+docker-compose up -d --build
+
+# View running containers
+docker-compose ps
+```
 
 ## Usage
 
@@ -114,6 +156,49 @@ Available view types:
 - **Story Continuity**: AI maintains narrative coherence
 - **Death Handling**: Automatic session management for player death
 - **Character Viewing**: Unified command to view character stats, inventory, spells, currency, and skills
+
+### ElevenLabs Voice Integration
+The bot supports ElevenLabs for high-quality voice synthesis with expression support and language-specific voice selection:
+
+#### Language Support
+The bot automatically selects appropriate voices based on the session language:
+- **English (en)**: Multiple voice options including Adam, Rachel, Domi, Bella
+- **Indonesian (id)**: Voice selection optimized for Indonesian content
+- **French (fr)**: French-optimized voice selection
+- **Spanish (es)**: Spanish-optimized voice selection
+- **German (de)**: German-optimized voice selection
+- **Italian (it)**: Italian-optimized voice selection
+- **Portuguese (pt)**: Portuguese-optimized voice selection
+- **Russian (ru)**: Russian-optimized voice selection
+
+#### Expression Support
+The bot can parse and apply voice expressions in story text:
+- `[sarcastically]` - Sarcastic tone with reduced stability
+- `[whispers]` - Whispered speech with lower volume
+- `[giggles]` - Laughing tone with increased style
+- `[angrily]` - Angry tone with high style and low stability
+- `[sadly]` - Sad tone with moderate style
+- `[excitedly]` - Excited tone with high style and speed
+- `[fearfully]` - Fearful tone with moderate style
+- `[mysteriously]` - Mysterious tone with moderate style
+
+#### Example Usage
+```
+In the ancient land of Eldoria, where skies shimmered and forests whispered secrets to the wind, lived a dragon named Zephyros. [sarcastically] Not the "burn it all down" kind... [giggles] but he was gentle, wise, with eyes like old stars. [whispers] Even the birds fell silent when he passed.
+```
+
+#### Language-Specific Voice Selection
+The bot automatically:
+1. Detects the session language (en, id, fr, etc.)
+2. Converts to ISO 639-1 format for ElevenLabs API
+3. Selects appropriate voice IDs for the language
+4. Applies expressions while maintaining language context
+
+#### Configuration
+- Set `USE_ELEVEN=true` to enable ElevenLabs
+- Set `ELEVEN_LABS_KEY` with your API key
+- Optionally customize `ELEVEN_LABS_DEFAULT_VOICE_ID` and `ELEVEN_LABS_MODEL_ID`
+- Voice selection is automatic based on session language
 
 ### Improved Systems
 - **Currency**: D&D 5e starting gold with background bonuses and realistic currency distribution

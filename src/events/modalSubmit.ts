@@ -245,7 +245,10 @@ export async function handleCharacterCreation(interaction: ModalSubmitInteractio
           await voiceService.narrateStoryEvent(
             session.voiceChannelId,
             session.guildId || '',
-            result.message
+            result.message,
+            undefined, // client parameter
+            session.language, // language parameter
+            sessionId // session ID parameter
           );
         } catch (voiceError) {
           logger.error('Error narrating game start in voice channel:', voiceError);

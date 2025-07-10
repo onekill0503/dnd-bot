@@ -16,6 +16,11 @@ import type {
   PlayerDeathEvent
 } from '../types';
 
+// Helper function to check if expression tags should be used
+function shouldUseExpressionTags(): boolean {
+  return botConfig.elevenLabs.enabled && botConfig.elevenLabs.modelId === 'eleven_v3';
+}
+
 export interface ActionAnalysis {
   requiresRoll: boolean;
   attackRoll?: boolean;
@@ -478,12 +483,24 @@ ${Array.from(session.players.values()).map(pc =>
 
 Create an engaging opening scene that introduces the party to their first adventure. Set the atmosphere, describe the environment, and present an initial hook or quest that will draw the players into the story. Make it immersive and exciting.
 
+${shouldUseExpressionTags() ? `IMPORTANT: Include voice expression tags in your text to make the narration more expressive. Use these tags:
+- [whispers] for quiet, secretive speech
+- [sarcastic] for sarcastic or mocking tones
+- [excited] for enthusiastic or energetic speech
+- [crying] for emotional or sad moments
+- [laughs] for humorous situations
+- [sighs] for tired or resigned moments
+- [curious] for inquisitive or questioning tones
+- [mischievously] for playful or sneaky behavior
+
+Example: "Seorang tetua desa, Nyonya Elara, mendekati kalian dengan wajah penuh kecemasan. [whispers]'Hutan itu berbicara,' bisiknya."` : ''}
+
 Keep your response to 2-3 paragraphs maximum.`;
 
       const response = await this.dmAi.chat([
         {
           role: 'system',
-          content: `You are a creative and experienced Dungeon Master who creates immersive D&D experiences. Focus on atmosphere, description, and engaging storytelling. ${languageInstruction}`,
+          content: `You are a creative and experienced Dungeon Master who creates immersive D&D experiences. Focus on atmosphere, description, and engaging storytelling.${shouldUseExpressionTags() ? ' ALWAYS include voice expression tags like [whispers], [excited], [sarcastic], etc. to make the narration more expressive and engaging.' : ''} ${languageInstruction}`,
         },
         {
           role: 'user',
@@ -652,12 +669,24 @@ Respond as the DM, describing what happens next based on the player's action. Co
 - Maintaining story coherence with previous events
 ${automaticRoll ? `- The dice roll result and whether it was successful (${automaticRoll.success ? 'SUCCESS' : 'FAILURE'})` : ''}
 
+${shouldUseExpressionTags() ? `IMPORTANT: Include voice expression tags in your text to make the narration more expressive. Use these tags:
+- [whispers] for quiet, secretive speech
+- [sarcastic] for sarcastic or mocking tones
+- [excited] for enthusiastic or energetic speech
+- [crying] for emotional or sad moments
+- [laughs] for humorous situations
+- [sighs] for tired or resigned moments
+- [curious] for inquisitive or questioning tones
+- [mischievously] for playful or sneaky behavior
+
+Example: "Seorang tetua desa, Nyonya Elara, mendekati kalian dengan wajah penuh kecemasan. [whispers]'Hutan itu berbicara,' bisiknya."` : ''}
+
 Keep your response to 3-4 paragraphs and make it engaging and descriptive. Ensure the story flows naturally from previous events.`;
 
       const response = await this.dmAi.chat([
         {
           role: 'system',
-          content: `You are a responsive Dungeon Master who maintains excellent story continuity and adapts the story based on player actions. Be descriptive, atmospheric, and ensure each response builds upon previous events and maintains narrative coherence. ${this.getLanguageInstruction(session.language)}`,
+          content: `You are a responsive Dungeon Master who maintains excellent story continuity and adapts the story based on player actions. Be descriptive, atmospheric, and ensure each response builds upon previous events and maintains narrative coherence.${shouldUseExpressionTags() ? ' ALWAYS include voice expression tags like [whispers], [excited], [sarcastic], etc. to make the narration more expressive and engaging.' : ''} ${this.getLanguageInstruction(session.language)}`,
         },
         {
           role: 'user',
@@ -885,12 +914,24 @@ Respond as the DM, describing what happens next based on ALL the players' action
 - Maintaining story coherence with the entire session history
 ${diceRollsList.length > 0 ? '- The results of the automatic dice rolls and their impact on the story' : ''}
 
+${shouldUseExpressionTags() ? `IMPORTANT: Include voice expression tags in your text to make the narration more expressive. Use these tags:
+- [whispers] for quiet, secretive speech
+- [sarcastic] for sarcastic or mocking tones
+- [excited] for enthusiastic or energetic speech
+- [crying] for emotional or sad moments
+- [laughs] for humorous situations
+- [sighs] for tired or resigned moments
+- [curious] for inquisitive or questioning tones
+- [mischievously] for playful or sneaky behavior
+
+Example: "Seorang tetua desa, Nyonya Elara, mendekati kalian dengan wajah penuh kecemasan. [whispers]'Hutan itu berbicara,' bisiknya."` : ''}
+
 Keep your response to 4-5 paragraphs and make it engaging and descriptive. Address how the different actions work together or conflict, and ensure the story flows naturally from all previous events.`;
 
       const response = await this.dmAi.chat([
         {
           role: 'system',
-          content: `You are a responsive Dungeon Master who maintains excellent story continuity and adapts the story based on player actions. Be descriptive, atmospheric, and ensure each response builds upon previous events and maintains narrative coherence. ${languageInstruction}`,
+          content: `You are a responsive Dungeon Master who maintains excellent story continuity and adapts the story based on player actions. Be descriptive, atmospheric, and ensure each response builds upon previous events and maintains narrative coherence.${shouldUseExpressionTags() ? ' ALWAYS include voice expression tags like [whispers], [excited], [sarcastic], etc. to make the narration more expressive and engaging.' : ''} ${languageInstruction}`,
         },
         {
           role: 'user',
@@ -984,7 +1025,10 @@ Keep your response to 4-5 paragraphs and make it engaging and descriptive. Addre
       await this.voiceService.narrateStoryEvent(
         session.voiceChannelId,
         session.guildId || '',
-        storyText
+        storyText,
+        undefined, // client parameter
+        session.language, // language parameter
+        sessionId // session ID parameter
       );
     } catch (voiceError) {
       logger.error('Error narrating story in voice channel:', voiceError);
@@ -1029,12 +1073,24 @@ For ${encounterType} encounters:
 - Exploration: Describe the environment, hidden dangers, and discoveries
 - Puzzle: Present a logical or magical puzzle with clues
 
+${shouldUseExpressionTags() ? `IMPORTANT: Include voice expression tags in your text to make the narration more expressive. Use these tags:
+- [whispers] for quiet, secretive speech
+- [sarcastic] for sarcastic or mocking tones
+- [excited] for enthusiastic or energetic speech
+- [crying] for emotional or sad moments
+- [laughs] for humorous situations
+- [sighs] for tired or resigned moments
+- [curious] for inquisitive or questioning tones
+- [mischievously] for playful or sneaky behavior
+
+Example: "Seorang tetua desa, Nyonya Elara, mendekati kalian dengan wajah penuh kecemasan. [whispers]'Hutan itu berbicara,' bisiknya."` : ''}
+
 Make it engaging and appropriate for the party's level. Keep your response to 2-3 paragraphs.`;
 
       const response = await this.dmAi.chat([
         {
           role: 'system',
-          content: `You are a creative Dungeon Master who designs engaging encounters that challenge and entertain players. ${languageInstruction}`,
+          content: `You are a creative Dungeon Master who designs engaging encounters that challenge and entertain players.${shouldUseExpressionTags() ? ' ALWAYS include voice expression tags like [whispers], [excited], [sarcastic], etc. to make the narration more expressive and engaging.' : ''} ${languageInstruction}`,
         },
         {
           role: 'user',
@@ -1066,7 +1122,10 @@ Make it engaging and appropriate for the party's level. Keep your response to 2-
       await this.voiceService.narrateStoryEvent(
         session.voiceChannelId,
         session.guildId || '',
-        encounterText
+        encounterText,
+        undefined, // client parameter
+        session.language, // language parameter
+        sessionId // session ID parameter
       );
     } catch (voiceError) {
       logger.error('Error narrating encounter in voice channel:', voiceError);
@@ -2150,11 +2209,11 @@ Provide a clear, accurate answer based on official D&D 5e rules. If the question
     // 1 platinum = 10 gold
     // 1 gold = 10 silver = 100 copper
     // 1 electrum = 5 silver = 0.5 gold
-    const gold = Math.floor(totalGold * 0.9); // Keep most as gold
-    const silver = Math.floor(totalGold * 0.8); // Some silver for smaller purchases
-    const copper = Math.floor(totalGold * 5); // Plenty of copper for minor expenses
-    const electrum = Math.floor(totalGold * 0.05); // Rare electrum pieces
-    const platinum = Math.floor(totalGold * 0.02); // Very rare platinum pieces
+    const gold = Math.floor(totalGold * 0.7); // Keep most as gold
+    const silver = Math.floor(totalGold * 0.2); // Some silver for smaller purchases
+    const copper = Math.floor(totalGold * 0.1); // Small amount of copper for minor expenses
+    const electrum = Math.floor(totalGold * 0.02); // Rare electrum pieces
+    const platinum = Math.floor(totalGold * 0.01); // Very rare platinum pieces
 
     return {
       copper,

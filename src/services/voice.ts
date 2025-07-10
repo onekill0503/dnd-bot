@@ -137,6 +137,46 @@ export class VoiceService {
   private analyzeContentForVoiceStyle(text: string): VoiceStyle {
     const lowerText = text.toLowerCase();
     
+    // Check for expressions in brackets first
+    const expressionRegex = /\[([^\]]+)\]/g;
+    const expressions = [...lowerText.matchAll(expressionRegex)].map(match => match[1]);
+    
+    // If expressions are found, use them to determine voice style
+    if (expressions.length > 0) {
+      const firstExpression = expressions[0];
+      
+      // Map expressions to voice styles
+      switch (firstExpression) {
+        case 'sarcastically':
+        case 'sarcastic':
+          return { voice: 'echo', speed: 0.9, dramatic: true };
+        case 'whispers':
+        case 'whisper':
+        case 'whispering':
+          return { voice: 'shimmer', speed: 0.7, dramatic: false };
+        case 'giggles':
+        case 'giggle':
+        case 'laughing':
+          return { voice: 'nova', speed: 1.1, dramatic: false };
+        case 'angrily':
+        case 'angry':
+          return { voice: 'onyx', speed: 0.8, dramatic: true };
+        case 'sadly':
+        case 'sad':
+          return { voice: 'fable', speed: 0.8, dramatic: false };
+        case 'excitedly':
+        case 'excited':
+          return { voice: 'nova', speed: 1.2, dramatic: true };
+        case 'fearfully':
+        case 'fearful':
+        case 'scared':
+          return { voice: 'shimmer', speed: 0.7, dramatic: true };
+        case 'mysteriously':
+        case 'mysterious':
+          return { voice: 'fable', speed: 0.85, dramatic: true };
+      }
+    }
+    
     // Combat scenes - use dramatic voice (English and Indonesian keywords)
     if (lowerText.includes('sword') || lowerText.includes('attack') || lowerText.includes('battle') || 
         lowerText.includes('enemy') || lowerText.includes('fight') || lowerText.includes('combat') ||
@@ -190,7 +230,7 @@ export class VoiceService {
   /**
    * Convert text to speech using TTS AI Service with dramatic styling
    */
-  async textToSpeech(text: string, style?: VoiceStyle): Promise<Buffer> {
+  async textToSpeech(text: string, style?: VoiceStyle, language?: string, sessionId?: string): Promise<Buffer> {
     try {
       const voiceStyle = style || this.analyzeContentForVoiceStyle(text);
       
@@ -203,11 +243,20 @@ export class VoiceService {
         processedText = processedText.replace(/\?/g, '?... ');
       }
 
+      // Use ElevenLabs voice ID if available, otherwise use OpenAI voice names
+      const voiceId = this.ttsAiService.isElevenLabsEnabled() 
+        ? this.ttsAiService.getVoiceIdForLanguage(language || 'en')
+        : voiceStyle.voice;
+
       const response = await this.ttsAiService.generateSpeech({
-        model: 'tts-1',
-        voice: voiceStyle.voice,
+        model: this.ttsAiService.isElevenLabsEnabled() 
+          ? botConfig.elevenLabs.modelId 
+          : 'tts-1',
+        voice: voiceId,
         input: processedText,
         speed: voiceStyle.speed || 1.0,
+        language: language || 'en', // Pass language parameter
+        sessionId: sessionId || 'default', // Pass session ID parameter
       });
 
       const arrayBuffer = await response.arrayBuffer();
@@ -221,7 +270,7 @@ export class VoiceService {
   /**
    * Speak text in a voice channel with dramatic narration
    */
-  async speakInChannel(channelId: string, guildId: string, text: string, client?: any, style?: VoiceStyle): Promise<void> {
+  async speakInChannel(channelId: string, guildId: string, text: string, client?: any, style?: VoiceStyle, language?: string, sessionId?: string): Promise<void> {
     try {
       // Get or create voice connection
       let connection = getVoiceConnection(guildId);
@@ -237,7 +286,7 @@ export class VoiceService {
 
       try {
         // Convert text to speech with dramatic styling
-        const audioBuffer = await this.textToSpeech(text, style);
+        const audioBuffer = await this.textToSpeech(text, style, language, sessionId);
         
         // Create a readable stream from the buffer
         const { Readable } = await import('stream');
@@ -275,7 +324,7 @@ export class VoiceService {
   /**
    * Narrate a story event with dramatic voice
    */
-  async narrateStoryEvent(channelId: string, guildId: string, storyText: string, client?: any): Promise<void> {
+  async narrateStoryEvent(channelId: string, guildId: string, storyText: string, client?: any, language?: string, sessionId?: string): Promise<void> {
     try {
       logger.info(`Narrating story event in voice channel ${channelId}: ${storyText.substring(0, 100)}...`);
       
@@ -294,7 +343,7 @@ export class VoiceService {
         }
       }
       
-      await this.speakInChannel(channelId, guildId, narratedText, client, voiceStyle);
+      await this.speakInChannel(channelId, guildId, narratedText, client, voiceStyle, language, sessionId);
     } catch (error) {
       logger.error('Error narrating story event:', error);
     }

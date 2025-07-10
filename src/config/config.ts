@@ -23,6 +23,12 @@ export interface BotConfig {
     model: string;
     apiKey: string;
   };
+  elevenLabs: {
+    apiKey: string;
+    enabled: boolean;
+    defaultVoiceId: string;
+    modelId: string;
+  };
 }
 
 export const botConfig: BotConfig = {
@@ -47,6 +53,12 @@ export const botConfig: BotConfig = {
     endpoint: process.env.TTS_AI_ENDPOINT || 'https://api.openai.com/v1',
     model: process.env.TTS_AI_MODEL || 'gpt-3.5-turbo',
     apiKey: process.env.TTS_AI_API_KEY || process.env.OPENAI_API_KEY || '',
+  },
+  elevenLabs: {
+    apiKey: process.env.ELEVEN_LABS_KEY || '',
+    enabled: process.env.USE_ELEVEN === 'true',
+    defaultVoiceId: process.env.ELEVEN_LABS_DEFAULT_VOICE_ID || 'pNInz6obpgDQGcFmaJgB', // Adam voice
+    modelId: process.env.ELEVEN_LABS_MODEL_ID || 'eleven_multilingual_v2',
   },
 };
 
