@@ -7,6 +7,8 @@ WORKDIR /app
 # Copy package files
 COPY package.json bun.lockb ./
 
+RUN bun install -g node-gyp
+
 # Install dependencies
 RUN bun install --frozen-lockfile
 
