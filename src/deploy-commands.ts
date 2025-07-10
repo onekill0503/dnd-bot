@@ -14,17 +14,16 @@ const rest = new REST().setToken(botConfig.token);
     if (botConfig.guildId) {
       await rest.put(
         Routes.applicationGuildCommands(botConfig.clientId, botConfig.guildId),
-        { body: commands },
+        { body: commands }
       );
       logger.info('Successfully reloaded guild (/) commands.');
     } else {
-      await rest.put(
-        Routes.applicationCommands(botConfig.clientId),
-        { body: commands },
-      );
+      await rest.put(Routes.applicationCommands(botConfig.clientId), {
+        body: commands,
+      });
       logger.info('Successfully reloaded application (/) commands.');
     }
   } catch (error) {
     logger.error('Error deploying commands:', error);
   }
-})(); 
+})();

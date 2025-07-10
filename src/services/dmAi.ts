@@ -1,5 +1,5 @@
-import OpenAI from "openai";
-import { botConfig } from "../config/config";
+import OpenAI from 'openai';
+import { botConfig } from '../config/config';
 
 export class DmAiService {
   private client: OpenAI;
@@ -17,4 +17,4 @@ export class DmAiService {
     });
     return response.choices[0].message.content ?? '';
   }
-} 
+}

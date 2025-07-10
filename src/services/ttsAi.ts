@@ -1,7 +1,16 @@
-import OpenAI from "openai";
-import { botConfig } from "../config/config";
-import { ElevenLabsTtsService } from "./elevenLabsTts";
-import { logger } from "../utils/logger";
+import OpenAI from 'openai';
+import { botConfig } from '../config/config';
+import { ElevenLabsTtsService } from './elevenLabsTts';
+import { logger } from '../utils/logger';
+
+export interface TtsGenerateSpeechParams {
+  model: string;
+  voice: string;
+  input: string;
+  speed?: number;
+  language?: string;
+  sessionId?: string;
+}
 
 export class TtsAiService {
   private openaiClient: OpenAI;
@@ -13,13 +22,15 @@ export class TtsAiService {
       baseURL: botConfig.ttsAi.endpoint,
     });
     this.elevenLabsService = new ElevenLabsTtsService();
-    
+
     // Debug logging
     logger.info(`TtsAiService initialized:`);
     logger.info(`- ElevenLabs enabled: ${botConfig.elevenLabs.enabled}`);
     logger.info(`- ElevenLabs API key set: ${!!botConfig.elevenLabs.apiKey}`);
     logger.info(`- USE_ELEVEN env var: ${process.env.USE_ELEVEN}`);
-    logger.info(`- ElevenLabs service enabled: ${this.elevenLabsService.isEnabled()}`);
+    logger.info(
+      `- ElevenLabs service enabled: ${this.elevenLabsService.isEnabled()}`
+    );
   }
 
   async chat(messages: any[]): Promise<string> {
@@ -30,21 +41,14 @@ export class TtsAiService {
     return response.choices[0].message.content ?? '';
   }
 
-  async generateSpeech(params: {
-    model: string;
-    voice: string;
-    input: string;
-    speed?: number;
-    language?: string; // Add language parameter
-    sessionId?: string; // Add session ID parameter
-  }): Promise<Response> {
+  async generateSpeech(params: TtsGenerateSpeechParams): Promise<Response> {
     // Debug logging
     logger.info(`generateSpeech called with:`);
     logger.info(`- ElevenLabs enabled: ${this.elevenLabsService.isEnabled()}`);
     logger.info(`- Language: ${params.language || 'en'}`);
     logger.info(`- Session ID: ${params.sessionId || 'default'}`);
     logger.info(`- Text length: ${params.input.length}`);
-    
+
     // Check if ElevenLabs is enabled and use it if available
     if (this.elevenLabsService.isEnabled()) {
       logger.info('Using ElevenLabs for TTS generation');
@@ -106,4 +110,4 @@ export class TtsAiService {
     }
     return botConfig.elevenLabs.defaultVoiceId;
   }
-} 
+}

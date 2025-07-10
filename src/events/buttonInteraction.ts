@@ -1,4 +1,12 @@
-import { Events, ButtonInteraction, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder, EmbedBuilder } from 'discord.js';
+import {
+  Events,
+  ButtonInteraction,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  ActionRowBuilder,
+  EmbedBuilder,
+} from 'discord.js';
 import { logger } from '../utils/logger';
 import { OpenAIService } from '../services/openai';
 
@@ -24,7 +32,7 @@ export const execute = async (interaction: any) => {
     logger.error('Error handling button interaction:', error);
     await interaction.reply({
       content: 'There was an error processing your request.',
-      flags: 64 // Ephemeral flag
+      flags: 64, // Ephemeral flag
     });
   }
 };
@@ -40,7 +48,7 @@ async function handleJoinSession(interaction: ButtonInteraction) {
       .setCustomId('character_name')
       .setLabel('Character Name')
       .setStyle(TextInputStyle.Short)
-      .setPlaceholder('Enter your character\'s name')
+      .setPlaceholder("Enter your character's name")
       .setRequired(true)
       .setMaxLength(50);
 
@@ -48,7 +56,9 @@ async function handleJoinSession(interaction: ButtonInteraction) {
       .setCustomId('character_class')
       .setLabel('Class')
       .setStyle(TextInputStyle.Short)
-      .setPlaceholder('Barbarian, Bard, Cleric, Druid, Fighter, Monk, Paladin, Ranger, Rogue, Sorcerer, Warlock, Wizard')
+      .setPlaceholder(
+        'Barbarian, Bard, Cleric, Druid, Fighter, Monk, Paladin, Ranger, Rogue, Sorcerer, Warlock, Wizard'
+      )
       .setRequired(true)
       .setMaxLength(20);
 
@@ -56,7 +66,9 @@ async function handleJoinSession(interaction: ButtonInteraction) {
       .setCustomId('character_race')
       .setLabel('Race')
       .setStyle(TextInputStyle.Short)
-      .setPlaceholder('Dragonborn, Dwarf, Elf, Gnome, Half-Elf, Half-Orc, Halfling, Human, Tiefling')
+      .setPlaceholder(
+        'Dragonborn, Dwarf, Elf, Gnome, Half-Elf, Half-Orc, Halfling, Human, Tiefling'
+      )
       .setRequired(true)
       .setMaxLength(20);
 
@@ -72,24 +84,38 @@ async function handleJoinSession(interaction: ButtonInteraction) {
       .setCustomId('character_description')
       .setLabel('Character Description')
       .setStyle(TextInputStyle.Paragraph)
-      .setPlaceholder('Describe your character\'s appearance, personality, and backstory...')
+      .setPlaceholder(
+        "Describe your character's appearance, personality, and backstory..."
+      )
       .setRequired(true)
       .setMaxLength(1000);
 
-    const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput);
-    const secondActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(classInput);
-    const thirdActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(raceInput);
-    const fourthActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(backgroundInput);
-    const fifthActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(descriptionInput);
+    const firstActionRow =
+      new ActionRowBuilder<TextInputBuilder>().addComponents(nameInput);
+    const secondActionRow =
+      new ActionRowBuilder<TextInputBuilder>().addComponents(classInput);
+    const thirdActionRow =
+      new ActionRowBuilder<TextInputBuilder>().addComponents(raceInput);
+    const fourthActionRow =
+      new ActionRowBuilder<TextInputBuilder>().addComponents(backgroundInput);
+    const fifthActionRow =
+      new ActionRowBuilder<TextInputBuilder>().addComponents(descriptionInput);
 
-    modal.addComponents(firstActionRow, secondActionRow, thirdActionRow, fourthActionRow, fifthActionRow);
+    modal.addComponents(
+      firstActionRow,
+      secondActionRow,
+      thirdActionRow,
+      fourthActionRow,
+      fifthActionRow
+    );
 
     await interaction.showModal(modal);
   } catch (error) {
     logger.error('Error in join session button:', error);
     await interaction.reply({
-      content: 'There was an error creating the character form. Please try again.',
-      flags: 64 // Ephemeral flag
+      content:
+        'There was an error creating the character form. Please try again.',
+      flags: 64, // Ephemeral flag
     });
   }
 }
@@ -99,65 +125,104 @@ async function handleShowStats(interaction: ButtonInteraction) {
     const userId = interaction.customId.replace('show_stats_', '');
     const sessionId = interaction.channelId;
     const openaiService = new OpenAIService();
-    
+
     // First try to get character using text channel ID (for backward compatibility)
     let character = await openaiService.getCharacter(sessionId, userId);
-    
+
     // If not found, try to find the session in Redis and use voice channel ID
     if (!character) {
       const sessionManager = (interaction.client as any).sessionManager;
       const allSessions = await sessionManager.getAllSessions();
-      const redisSession = allSessions.find((session: any) => 
-        session.participants.includes(userId) || 
-        session.guildId === interaction.guildId
+      const redisSession = allSessions.find(
+        (session: any) =>
+          session.participants.includes(userId) ||
+          session.guildId === interaction.guildId
       );
-      
+
       if (redisSession) {
         // Load session from Redis using voice channel ID
-        const session = await openaiService.getSessionStatus(redisSession.channelId);
+        const session = await openaiService.getSessionStatus(
+          redisSession.channelId
+        );
         if (session) {
           character = session.players.get(userId) || null;
         }
       }
     }
-    
+
     if (!character) {
       await interaction.reply({
         content: '❌ Character not found.',
-        flags: 64 // Ephemeral flag
+        flags: 64, // Ephemeral flag
       });
       return;
     }
 
     const embed = new EmbedBuilder()
-      .setColor(0x4B0082)
+      .setColor(0x4b0082)
       .setTitle(`📊 ${character.name}'s Character Sheet`)
       .addFields(
-        { name: 'Class', value: `${character.race} ${character.class}`, inline: true },
+        {
+          name: 'Class',
+          value: `${character.race} ${character.class}`,
+          inline: true,
+        },
         { name: 'Level', value: character.level.toString(), inline: true },
         { name: 'Background', value: character.background, inline: true },
-        { name: 'Hit Points', value: character.hitPoints.toString(), inline: true },
-        { name: 'Armor Class', value: character.armorClass.toString(), inline: true },
+        {
+          name: 'Hit Points',
+          value: character.hitPoints.toString(),
+          inline: true,
+        },
+        {
+          name: 'Armor Class',
+          value: character.armorClass.toString(),
+          inline: true,
+        },
         { name: 'Alignment', value: character.alignment, inline: true },
-        { name: 'Strength', value: `${character.stats.strength} (${character.stats.strength >= 10 ? '+' : ''}${Math.floor((character.stats.strength - 10) / 2)})`, inline: true },
-        { name: 'Dexterity', value: `${character.stats.dexterity} (${character.stats.dexterity >= 10 ? '+' : ''}${Math.floor((character.stats.dexterity - 10) / 2)})`, inline: true },
-        { name: 'Constitution', value: `${character.stats.constitution} (${character.stats.constitution >= 10 ? '+' : ''}${Math.floor((character.stats.constitution - 10) / 2)})`, inline: true },
-        { name: 'Intelligence', value: `${character.stats.intelligence} (${character.stats.intelligence >= 10 ? '+' : ''}${Math.floor((character.stats.intelligence - 10) / 2)})`, inline: true },
-        { name: 'Wisdom', value: `${character.stats.wisdom} (${character.stats.wisdom >= 10 ? '+' : ''}${Math.floor((character.stats.wisdom - 10) / 2)})`, inline: true },
-        { name: 'Charisma', value: `${character.stats.charisma} (${character.stats.charisma >= 10 ? '+' : ''}${Math.floor((character.stats.charisma - 10) / 2)})`, inline: true },
+        {
+          name: 'Strength',
+          value: `${character.stats.strength} (${character.stats.strength >= 10 ? '+' : ''}${Math.floor((character.stats.strength - 10) / 2)})`,
+          inline: true,
+        },
+        {
+          name: 'Dexterity',
+          value: `${character.stats.dexterity} (${character.stats.dexterity >= 10 ? '+' : ''}${Math.floor((character.stats.dexterity - 10) / 2)})`,
+          inline: true,
+        },
+        {
+          name: 'Constitution',
+          value: `${character.stats.constitution} (${character.stats.constitution >= 10 ? '+' : ''}${Math.floor((character.stats.constitution - 10) / 2)})`,
+          inline: true,
+        },
+        {
+          name: 'Intelligence',
+          value: `${character.stats.intelligence} (${character.stats.intelligence >= 10 ? '+' : ''}${Math.floor((character.stats.intelligence - 10) / 2)})`,
+          inline: true,
+        },
+        {
+          name: 'Wisdom',
+          value: `${character.stats.wisdom} (${character.stats.wisdom >= 10 ? '+' : ''}${Math.floor((character.stats.wisdom - 10) / 2)})`,
+          inline: true,
+        },
+        {
+          name: 'Charisma',
+          value: `${character.stats.charisma} (${character.stats.charisma >= 10 ? '+' : ''}${Math.floor((character.stats.charisma - 10) / 2)})`,
+          inline: true,
+        },
         { name: 'Description', value: character.description, inline: false }
       )
       .setFooter({ text: `Player: ${character.username}` });
 
     await interaction.reply({
       embeds: [embed],
-      flags: 64 // Ephemeral flag
+      flags: 64, // Ephemeral flag
     });
   } catch (error) {
     logger.error('Error showing character stats:', error);
     await interaction.reply({
       content: 'There was an error showing character stats. Please try again.',
-      flags: 64 // Ephemeral flag
+      flags: 64, // Ephemeral flag
     });
   }
 }
@@ -173,11 +238,13 @@ async function handlePlayerAction(interaction: ButtonInteraction) {
       .setCustomId('action_description')
       .setLabel('What do you want to do?')
       .setStyle(TextInputStyle.Paragraph)
-      .setPlaceholder('Describe your character\'s action in detail...')
+      .setPlaceholder("Describe your character's action in detail...")
       .setRequired(true)
       .setMaxLength(1000);
 
-    const actionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(actionInput);
+    const actionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(
+      actionInput
+    );
     modal.addComponents(actionRow);
 
     await interaction.showModal(modal);
@@ -185,7 +252,7 @@ async function handlePlayerAction(interaction: ButtonInteraction) {
     logger.error('Error in player action button:', error);
     await interaction.reply({
       content: 'There was an error creating the action form. Please try again.',
-      flags: 64 // Ephemeral flag
+      flags: 64, // Ephemeral flag
     });
   }
 }
@@ -213,8 +280,10 @@ async function handleCastSpell(interaction: ButtonInteraction) {
       .setRequired(true)
       .setMaxLength(1);
 
-    const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(spellNameInput);
-    const secondActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(spellLevelInput);
+    const firstActionRow =
+      new ActionRowBuilder<TextInputBuilder>().addComponents(spellNameInput);
+    const secondActionRow =
+      new ActionRowBuilder<TextInputBuilder>().addComponents(spellLevelInput);
 
     modal.addComponents(firstActionRow, secondActionRow);
 
@@ -222,8 +291,9 @@ async function handleCastSpell(interaction: ButtonInteraction) {
   } catch (error) {
     logger.error('Error in cast spell button:', error);
     await interaction.reply({
-      content: 'There was an error creating the spell casting form. Please try again.',
-      flags: 64 // Ephemeral flag
+      content:
+        'There was an error creating the spell casting form. Please try again.',
+      flags: 64, // Ephemeral flag
     });
   }
 }
@@ -251,8 +321,12 @@ async function handleGenerateEncounter(interaction: ButtonInteraction) {
       .setRequired(false)
       .setMaxLength(10);
 
-    const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(encounterTypeInput);
-    const secondActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(difficultyInput);
+    const firstActionRow =
+      new ActionRowBuilder<TextInputBuilder>().addComponents(
+        encounterTypeInput
+      );
+    const secondActionRow =
+      new ActionRowBuilder<TextInputBuilder>().addComponents(difficultyInput);
 
     modal.addComponents(firstActionRow, secondActionRow);
 
@@ -260,8 +334,9 @@ async function handleGenerateEncounter(interaction: ButtonInteraction) {
   } catch (error) {
     logger.error('Error in generate encounter button:', error);
     await interaction.reply({
-      content: 'There was an error creating the encounter form. Please try again.',
-      flags: 64 // Ephemeral flag
+      content:
+        'There was an error creating the encounter form. Please try again.',
+      flags: 64, // Ephemeral flag
     });
   }
-} 
+}

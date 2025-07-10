@@ -3,6 +3,7 @@ import type { RedisClientType } from 'redis';
 import { botConfig } from '../config/config';
 import { logger } from '../utils/logger';
 import type { PlayerStatus, PlayerDeathEvent, SessionEndEvent } from '../types';
+import { SessionEndReason } from '../types/enums';
 
 export interface SessionData {
   sessionId: string;
@@ -43,7 +44,7 @@ export class RedisService {
       this.isConnected = true;
     });
 
-    this.client.on('error', (error) => {
+    this.client.on('error', error => {
       logger.error('Redis connection error:', error);
       this.isConnected = false;
     });
@@ -82,7 +83,10 @@ export class RedisService {
   /**
    * Save session data to Redis
    */
-  async saveSession(channelId: string, sessionData: Omit<SessionData, 'channelId'>): Promise<void> {
+  async saveSession(
+    channelId: string,
+    sessionData: Omit<SessionData, 'channelId'>
+  ): Promise<void> {
     try {
       await this.connect();
       const key = this.generateSessionKey(channelId);
@@ -117,12 +121,12 @@ export class RedisService {
       }
 
       const sessionData: SessionData = JSON.parse(data);
-      
+
       // Handle legacy sessions without creatorId
       if (!sessionData.creatorId) {
         sessionData.creatorId = sessionData.participants[0] || 'unknown';
       }
-      
+
       // Update last activity
       sessionData.lastActivity = Date.now();
       await this.saveSession(channelId, sessionData);
@@ -137,7 +141,10 @@ export class RedisService {
   /**
    * Update session data
    */
-  async updateSession(channelId: string, updates: Partial<SessionData>): Promise<void> {
+  async updateSession(
+    channelId: string,
+    updates: Partial<SessionData>
+  ): Promise<void> {
     try {
       const existingSession = await this.getSession(channelId);
       if (!existingSession) {
@@ -184,7 +191,9 @@ export class RedisService {
 
       if (!session.participants.includes(userId)) {
         session.participants.push(userId);
-        await this.updateSession(channelId, { participants: session.participants });
+        await this.updateSession(channelId, {
+          participants: session.participants,
+        });
       }
     } catch (error) {
       logger.error('Error adding participant to session:', error);
@@ -202,8 +211,12 @@ export class RedisService {
         return; // Session doesn't exist, nothing to remove
       }
 
-      const updatedParticipants = session.participants.filter(id => id !== userId);
-      await this.updateSession(channelId, { participants: updatedParticipants });
+      const updatedParticipants = session.participants.filter(
+        id => id !== userId
+      );
+      await this.updateSession(channelId, {
+        participants: updatedParticipants,
+      });
     } catch (error) {
       logger.error('Error removing participant from session:', error);
       throw error;
@@ -223,12 +236,12 @@ export class RedisService {
         const data = await this.client.get(key);
         if (data) {
           const sessionData: SessionData = JSON.parse(data);
-          
+
           // Handle legacy sessions without creatorId
           if (!sessionData.creatorId) {
             sessionData.creatorId = sessionData.participants[0] || 'unknown';
           }
-          
+
           sessions.push(sessionData);
         }
       }
@@ -263,7 +276,11 @@ export class RedisService {
   /**
    * Update player status (alive/dead/unconscious)
    */
-  async updatePlayerStatus(channelId: string, userId: string, status: PlayerStatus): Promise<void> {
+  async updatePlayerStatus(
+    channelId: string,
+    userId: string,
+    status: PlayerStatus
+  ): Promise<void> {
     try {
       const session = await this.getSession(channelId);
       if (!session) {
@@ -296,7 +313,9 @@ export class RedisService {
         deadPlayers,
       });
 
-      logger.info(`Updated player ${userId} status to ${status} in channel ${channelId}`);
+      logger.info(
+        `Updated player ${userId} status to ${status} in channel ${channelId}`
+      );
     } catch (error) {
       logger.error('Error updating player status:', error);
       throw error;
@@ -306,7 +325,10 @@ export class RedisService {
   /**
    * Record player death event
    */
-  async recordPlayerDeath(channelId: string, deathEvent: PlayerDeathEvent): Promise<void> {
+  async recordPlayerDeath(
+    channelId: string,
+    deathEvent: PlayerDeathEvent
+  ): Promise<void> {
     try {
       const session = await this.getSession(channelId);
       if (!session) {
@@ -324,7 +346,9 @@ export class RedisService {
         deathEvents: session.deathEvents,
       });
 
-      logger.info(`Recorded death event for player ${deathEvent.playerId} in channel ${channelId}`);
+      logger.info(
+        `Recorded death event for player ${deathEvent.playerId} in channel ${channelId}`
+      );
     } catch (error) {
       logger.error('Error recording player death:', error);
       throw error;
@@ -363,8 +387,8 @@ export class RedisService {
       }
 
       return Array.from(session.playerStatuses.entries())
-        .filter(([_, status]) => status === 'alive' || status === 'unconscious')
-        .map(([playerId, _]) => playerId);
+        .filter(([, status]) => status === 'alive' || status === 'unconscious')
+        .map(([playerId]) => playerId);
     } catch (error) {
       logger.error('Error getting alive players:', error);
       throw error;
@@ -382,8 +406,8 @@ export class RedisService {
       }
 
       return Array.from(session.playerStatuses.entries())
-        .filter(([_, status]) => status === 'dead')
-        .map(([playerId, _]) => playerId);
+        .filter(([, status]) => status === 'dead')
+        .map(([playerId]) => playerId);
     } catch (error) {
       logger.error('Error getting dead players:', error);
       throw error;
@@ -400,11 +424,10 @@ export class RedisService {
         throw new Error(`No session found for channel ${channelId}`);
       }
 
-      const deadPlayers = await this.getDeadPlayers(channelId);
       const deathEvents = session.deathEvents || [];
 
       const sessionEndEvent: SessionEndEvent = {
-        reason: 'all_players_dead',
+        reason: SessionEndReason.ALL_PLAYERS_DEAD,
         deadPlayers: deathEvents,
         timestamp: Date.now(),
       };
@@ -413,7 +436,9 @@ export class RedisService {
         sessionEndEvent,
       });
 
-      logger.info(`Session ended for channel ${channelId} - all players are dead`);
+      logger.info(
+        `Session ended for channel ${channelId} - all players are dead`
+      );
     } catch (error) {
       logger.error('Error ending session due to all players dead:', error);
       throw error;
@@ -437,4 +462,4 @@ export class RedisService {
       throw error;
     }
   }
-} 
+}

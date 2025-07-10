@@ -24,16 +24,16 @@ export class Bot {
     try {
       // Validate configuration
       validateConfig();
-      
+
       // Register commands
       this.registerCommands();
-      
+
       // Register events
       this.registerEvents();
-      
+
       // Login to Discord
       await this.client.login(botConfig.token);
-      
+
       logger.info('Bot initialized successfully');
     } catch (error) {
       logger.error('Failed to initialize bot:', error);
@@ -52,9 +52,9 @@ export class Bot {
   private registerEvents(): void {
     for (const event of events) {
       if (event.once) {
-        this.client.once(event.name, (...args) => event.execute(...args));
+        this.client.once(event.name as any, (args: any) => event.execute(args));
       } else {
-        this.client.on(event.name, (...args) => event.execute(...args));
+        this.client.on(event.name as any, (args: any) => event.execute(args));
       }
       logger.debug(`Registered event: ${event.name}`);
     }
@@ -65,4 +65,4 @@ export class Bot {
     this.client.destroy();
     logger.info('Bot destroyed');
   }
-} 
+}

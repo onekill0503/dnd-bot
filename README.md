@@ -198,7 +198,6 @@ The bot automatically:
 - Set `USE_ELEVEN=true` to enable ElevenLabs
 - Set `ELEVEN_LABS_KEY` with your API key
 - Optionally customize `ELEVEN_LABS_DEFAULT_VOICE_ID` and `ELEVEN_LABS_MODEL_ID`
-- Voice selection is automatic based on session language
 
 ### Improved Systems
 - **Currency**: D&D 5e starting gold with background bonuses and realistic currency distribution

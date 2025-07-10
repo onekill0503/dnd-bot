@@ -2,6 +2,7 @@ import { VoiceService } from './voice';
 import { RedisService } from './redis';
 import type { SessionData } from './redis';
 import { logger } from '../utils/logger';
+import { PlayerStatus } from '../types/enums';
 
 export class SessionManager {
   private voiceService: VoiceService;
@@ -28,12 +29,22 @@ export class SessionManager {
   /**
    * Start a new D&D session in a voice channel
    */
-  async startSession(channelId: string, guildId: string, creatorId: string): Promise<SessionData> {
+  async startSession(
+    channelId: string,
+    guildId: string,
+    creatorId: string
+  ): Promise<SessionData> {
     try {
       // Create session in Redis
-      const session = await this.voiceService.createSession(channelId, guildId, creatorId);
-      
-      logger.info(`Started new D&D session in channel ${channelId} by user ${creatorId}`);
+      const session = await this.voiceService.createSession(
+        channelId,
+        guildId,
+        creatorId
+      );
+
+      logger.info(
+        `Started new D&D session in channel ${channelId} by user ${creatorId}`
+      );
       return session;
     } catch (error) {
       logger.error('Error starting session:', error);
@@ -44,9 +55,17 @@ export class SessionManager {
   /**
    * Get or create session for a voice channel
    */
-  async getOrCreateSession(channelId: string, guildId: string, userId: string): Promise<SessionData> {
+  async getOrCreateSession(
+    channelId: string,
+    guildId: string,
+    userId: string
+  ): Promise<SessionData> {
     try {
-      return await this.voiceService.getOrCreateSession(channelId, guildId, userId);
+      return await this.voiceService.getOrCreateSession(
+        channelId,
+        guildId,
+        userId
+      );
     } catch (error) {
       logger.error('Error getting or creating session:', error);
       throw error;
@@ -59,7 +78,9 @@ export class SessionManager {
   async addParticipant(channelId: string, userId: string): Promise<void> {
     try {
       await this.redisService.addParticipant(channelId, userId);
-      logger.info(`Added participant ${userId} to session in channel ${channelId}`);
+      logger.info(
+        `Added participant ${userId} to session in channel ${channelId}`
+      );
     } catch (error) {
       logger.error('Error adding participant:', error);
       throw error;
@@ -72,7 +93,9 @@ export class SessionManager {
   async removeParticipant(channelId: string, userId: string): Promise<void> {
     try {
       await this.redisService.removeParticipant(channelId, userId);
-      logger.info(`Removed participant ${userId} from session in channel ${channelId}`);
+      logger.info(
+        `Removed participant ${userId} from session in channel ${channelId}`
+      );
     } catch (error) {
       logger.error('Error removing participant:', error);
       throw error;
@@ -94,7 +117,10 @@ export class SessionManager {
   /**
    * Update session data
    */
-  async updateSession(channelId: string, updates: Partial<SessionData>): Promise<void> {
+  async updateSession(
+    channelId: string,
+    updates: Partial<SessionData>
+  ): Promise<void> {
     try {
       await this.redisService.updateSession(channelId, updates);
       logger.info(`Updated session in channel ${channelId}`);
@@ -169,7 +195,12 @@ export class SessionManager {
   /**
    * Speak text in a voice channel
    */
-  async speakInChannel(channelId: string, guildId: string, text: string, client?: any): Promise<void> {
+  async speakInChannel(
+    channelId: string,
+    guildId: string,
+    text: string,
+    client?: any
+  ): Promise<void> {
     try {
       await this.voiceService.speakInChannel(channelId, guildId, text, client);
     } catch (error) {
@@ -181,7 +212,11 @@ export class SessionManager {
   /**
    * Leave voice channel and clean up session
    */
-  async leaveVoiceChannel(guildId: string, channelId: string, userId: string): Promise<void> {
+  async leaveVoiceChannel(
+    guildId: string,
+    channelId: string,
+    userId: string
+  ): Promise<void> {
     try {
       await this.voiceService.leaveVoiceChannel(guildId, channelId, userId);
     } catch (error) {
@@ -193,24 +228,35 @@ export class SessionManager {
   /**
    * Disconnect from voice channel and end session
    */
-  async disconnectFromVoiceChannel(channelId: string, userId: string): Promise<void> {
+  async disconnectFromVoiceChannel(
+    channelId: string,
+    userId: string
+  ): Promise<void> {
     try {
       // Remove user from session participants
       await this.redisService.removeParticipant(channelId, userId);
-      
+
       // Get updated session to check if any participants remain
       const session = await this.redisService.getSession(channelId);
-      
+
       if (session && session.participants.length === 0) {
         // No participants left, delete session
         await this.redisService.deleteSession(channelId);
-        logger.info(`Session ended for channel ${channelId} - no participants remaining`);
+        logger.info(
+          `Session ended for channel ${channelId} - no participants remaining`
+        );
       }
 
       // Leave voice channel
-      await this.voiceService.leaveVoiceChannel(session?.guildId || '', channelId, userId);
-      
-      logger.info(`Disconnected user ${userId} from voice channel ${channelId}`);
+      await this.voiceService.leaveVoiceChannel(
+        session?.guildId || '',
+        channelId,
+        userId
+      );
+
+      logger.info(
+        `Disconnected user ${userId} from voice channel ${channelId}`
+      );
     } catch (error) {
       logger.error('Error disconnecting from voice channel:', error);
       throw error;
@@ -233,10 +279,16 @@ export class SessionManager {
   /**
    * Update player status (alive/dead/unconscious)
    */
-  async updatePlayerStatus(channelId: string, userId: string, status: 'alive' | 'dead' | 'unconscious'): Promise<void> {
+  async updatePlayerStatus(
+    channelId: string,
+    userId: string,
+    status: PlayerStatus
+  ): Promise<void> {
     try {
       await this.redisService.updatePlayerStatus(channelId, userId, status);
-      logger.info(`Updated player ${userId} status to ${status} in channel ${channelId}`);
+      logger.info(
+        `Updated player ${userId} status to ${status} in channel ${channelId}`
+      );
     } catch (error) {
       logger.error('Error updating player status:', error);
       throw error;
@@ -246,7 +298,12 @@ export class SessionManager {
   /**
    * Record player death event
    */
-  async recordPlayerDeath(channelId: string, playerId: string, characterName: string, cause: string): Promise<void> {
+  async recordPlayerDeath(
+    channelId: string,
+    playerId: string,
+    characterName: string,
+    cause: string
+  ): Promise<void> {
     try {
       const deathEvent = {
         playerId,
@@ -256,7 +313,9 @@ export class SessionManager {
       };
 
       await this.redisService.recordPlayerDeath(channelId, deathEvent);
-      logger.info(`Recorded death event for player ${playerId} (${characterName}) in channel ${channelId}`);
+      logger.info(
+        `Recorded death event for player ${playerId} (${characterName}) in channel ${channelId}`
+      );
     } catch (error) {
       logger.error('Error recording player death:', error);
       throw error;
@@ -317,7 +376,9 @@ export class SessionManager {
   async endSessionDueToAllPlayersDead(channelId: string): Promise<void> {
     try {
       await this.redisService.endSessionDueToAllPlayersDead(channelId);
-      logger.info(`Session ended for channel ${channelId} - all players are dead`);
+      logger.info(
+        `Session ended for channel ${channelId} - all players are dead`
+      );
     } catch (error) {
       logger.error('Error ending session due to all players dead:', error);
       throw error;
@@ -327,22 +388,27 @@ export class SessionManager {
   /**
    * Handle player death and check if session should end
    */
-  async handlePlayerDeath(channelId: string, playerId: string, characterName: string, cause: string): Promise<boolean> {
+  async handlePlayerDeath(
+    channelId: string,
+    playerId: string,
+    characterName: string,
+    cause: string
+  ): Promise<boolean> {
     try {
       // Record the death
       await this.recordPlayerDeath(channelId, playerId, characterName, cause);
-      
+
       // Update player status to dead
-      await this.updatePlayerStatus(channelId, playerId, 'dead');
-      
+      await this.updatePlayerStatus(channelId, playerId, PlayerStatus.DEAD);
+
       // Check if all players are dead
       const allDead = await this.areAllPlayersDead(channelId);
-      
+
       if (allDead) {
         await this.endSessionDueToAllPlayersDead(channelId);
         return true; // Session ended
       }
-      
+
       return false; // Session continues
     } catch (error) {
       logger.error('Error handling player death:', error);
@@ -353,7 +419,13 @@ export class SessionManager {
   /**
    * Update character skills
    */
-  async updateCharacterSkills(channelId: string, userId: string, skillName: string, proficient: boolean, modifier: number): Promise<void> {
+  async updateCharacterSkills(
+    channelId: string,
+    userId: string,
+    skillName: string,
+    proficient: boolean,
+    modifier: number
+  ): Promise<void> {
     try {
       const session = await this.redisService.getSession(channelId);
       if (!session || !session.gameState) {
@@ -375,7 +447,9 @@ export class SessionManager {
 
       // Update the session
       await this.redisService.updateSession(channelId, { gameState });
-      logger.info(`Updated skills for player ${userId} in session ${channelId}`);
+      logger.info(
+        `Updated skills for player ${userId} in session ${channelId}`
+      );
     } catch (error) {
       logger.error('Error updating character skills:', error);
       throw error;
@@ -385,7 +459,12 @@ export class SessionManager {
   /**
    * Update character currency
    */
-  async updateCharacterCurrency(channelId: string, userId: string, currencyType: string, amount: number): Promise<void> {
+  async updateCharacterCurrency(
+    channelId: string,
+    userId: string,
+    currencyType: string,
+    amount: number
+  ): Promise<void> {
     try {
       const session = await this.redisService.getSession(channelId);
       if (!session || !session.gameState) {
@@ -402,12 +481,17 @@ export class SessionManager {
 
       // Update the specific currency
       if (player.currency && player.currency[currencyType] !== undefined) {
-        player.currency[currencyType] = Math.max(0, player.currency[currencyType] + amount);
+        player.currency[currencyType] = Math.max(
+          0,
+          player.currency[currencyType] + amount
+        );
       }
 
       // Update the session
       await this.redisService.updateSession(channelId, { gameState });
-      logger.info(`Updated currency for player ${userId} in session ${channelId}`);
+      logger.info(
+        `Updated currency for player ${userId} in session ${channelId}`
+      );
     } catch (error) {
       logger.error('Error updating character currency:', error);
       throw error;
@@ -417,7 +501,11 @@ export class SessionManager {
   /**
    * Add item to character inventory
    */
-  async addInventoryItem(channelId: string, userId: string, item: any): Promise<void> {
+  async addInventoryItem(
+    channelId: string,
+    userId: string,
+    item: any
+  ): Promise<void> {
     try {
       const session = await this.redisService.getSession(channelId);
       if (!session || !session.gameState) {
@@ -442,7 +530,9 @@ export class SessionManager {
 
       // Update the session
       await this.redisService.updateSession(channelId, { gameState });
-      logger.info(`Added item to inventory for player ${userId} in session ${channelId}`);
+      logger.info(
+        `Added item to inventory for player ${userId} in session ${channelId}`
+      );
     } catch (error) {
       logger.error('Error adding inventory item:', error);
       throw error;
@@ -452,7 +542,11 @@ export class SessionManager {
   /**
    * Remove item from character inventory
    */
-  async removeInventoryItem(channelId: string, userId: string, itemId: string): Promise<void> {
+  async removeInventoryItem(
+    channelId: string,
+    userId: string,
+    itemId: string
+  ): Promise<void> {
     try {
       const session = await this.redisService.getSession(channelId);
       if (!session || !session.gameState) {
@@ -469,12 +563,16 @@ export class SessionManager {
 
       // Remove the item
       if (player.inventory) {
-        player.inventory = player.inventory.filter((item: any) => item.id !== itemId);
+        player.inventory = player.inventory.filter(
+          (item: any) => item.id !== itemId
+        );
       }
 
       // Update the session
       await this.redisService.updateSession(channelId, { gameState });
-      logger.info(`Removed item from inventory for player ${userId} in session ${channelId}`);
+      logger.info(
+        `Removed item from inventory for player ${userId} in session ${channelId}`
+      );
     } catch (error) {
       logger.error('Error removing inventory item:', error);
       throw error;
@@ -484,7 +582,12 @@ export class SessionManager {
   /**
    * Update spell slots for a character
    */
-  async updateSpellSlots(channelId: string, userId: string, spellLevel: number, used: number): Promise<void> {
+  async updateSpellSlots(
+    channelId: string,
+    userId: string,
+    spellLevel: number,
+    used: number
+  ): Promise<void> {
     try {
       const session = await this.redisService.getSession(channelId);
       if (!session || !session.gameState) {
@@ -501,7 +604,9 @@ export class SessionManager {
 
       // Update spell slots
       if (player.spellSlots) {
-        const spellSlot = player.spellSlots.find((slot: any) => slot.level === spellLevel);
+        const spellSlot = player.spellSlots.find(
+          (slot: any) => slot.level === spellLevel
+        );
         if (spellSlot) {
           spellSlot.used = Math.min(spellSlot.total, used);
           spellSlot.available = spellSlot.total - spellSlot.used;
@@ -510,7 +615,9 @@ export class SessionManager {
 
       // Update the session
       await this.redisService.updateSession(channelId, { gameState });
-      logger.info(`Updated spell slots for player ${userId} in session ${channelId}`);
+      logger.info(
+        `Updated spell slots for player ${userId} in session ${channelId}`
+      );
     } catch (error) {
       logger.error('Error updating spell slots:', error);
       throw error;
@@ -520,7 +627,11 @@ export class SessionManager {
   /**
    * Add cantrip to character
    */
-  async addCantrip(channelId: string, userId: string, cantrip: any): Promise<void> {
+  async addCantrip(
+    channelId: string,
+    userId: string,
+    cantrip: any
+  ): Promise<void> {
     try {
       const session = await this.redisService.getSession(channelId);
       if (!session || !session.gameState) {
@@ -555,7 +666,10 @@ export class SessionManager {
   /**
    * Get character sheet for a player
    */
-  async getCharacterSheet(channelId: string, userId: string): Promise<any | null> {
+  async getCharacterSheet(
+    channelId: string,
+    userId: string
+  ): Promise<any | null> {
     try {
       const session = await this.redisService.getSession(channelId);
       if (!session || !session.gameState) {
@@ -572,4 +686,4 @@ export class SessionManager {
       throw error;
     }
   }
-} 
+}

@@ -4,10 +4,14 @@ export class DiceRoller {
   /**
    * Parse dice notation (e.g., "2d6+3", "1d20-1")
    */
-  static parseDiceNotation(notation: string): { dice: number; sides: number; modifier: number } {
+  static parseDiceNotation(notation: string): {
+    dice: number;
+    sides: number;
+    modifier: number;
+  } {
     const regex = /^(\d+)d(\d+)([+-]\d+)?$/;
     const match = notation.toLowerCase().replace(/\s/g, '').match(regex);
-    
+
     if (!match) {
       throw new Error(`Invalid dice notation: ${notation}`);
     }
@@ -24,7 +28,7 @@ export class DiceRoller {
    */
   static roll(notation: string): DiceRoll {
     const { dice, sides, modifier } = this.parseDiceNotation(notation);
-    
+
     const rolls: number[] = [];
     let total = 0;
 
@@ -86,7 +90,7 @@ export class DiceRoller {
    */
   static generateAbilityScores(): number[] {
     const scores: number[] = [];
-    
+
     for (let i = 0; i < 6; i++) {
       const rolls = [
         Math.floor(Math.random() * 6) + 1,
@@ -94,13 +98,13 @@ export class DiceRoller {
         Math.floor(Math.random() * 6) + 1,
         Math.floor(Math.random() * 6) + 1,
       ];
-      
+
       // Remove lowest roll
       rolls.sort((a, b) => b - a);
       const score = rolls[0] + rolls[1] + rolls[2];
       scores.push(score);
     }
-    
+
     return scores;
   }
 
@@ -110,4 +114,4 @@ export class DiceRoller {
   static getAbilityModifier(score: number): number {
     return Math.floor((score - 10) / 2);
   }
-} 
+}

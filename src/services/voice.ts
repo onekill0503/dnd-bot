@@ -1,13 +1,12 @@
-import { 
-  joinVoiceChannel, 
-  createAudioPlayer, 
-  createAudioResource, 
+import {
+  joinVoiceChannel,
+  createAudioPlayer,
+  createAudioResource,
   AudioPlayerStatus,
   VoiceConnectionStatus,
   entersState,
-  getVoiceConnection
+  getVoiceConnection,
 } from '@discordjs/voice';
-import { Guild } from 'discord.js';
 import { botConfig } from '../config/config';
 import { logger } from '../utils/logger';
 import { RedisService } from './redis';
@@ -40,7 +39,11 @@ export class VoiceService {
   /**
    * Create a new D&D session for a voice channel
    */
-  async createSession(channelId: string, guildId: string, creatorId: string): Promise<SessionData> {
+  async createSession(
+    channelId: string,
+    guildId: string,
+    creatorId: string
+  ): Promise<SessionData> {
     try {
       const sessionData: Omit<SessionData, 'channelId'> = {
         sessionId: this.generateSessionId(),
@@ -59,7 +62,7 @@ export class VoiceService {
       };
 
       await this.redisService.saveSession(channelId, sessionData);
-      
+
       logger.info(`Created new D&D session for channel ${channelId}`);
       return { ...sessionData, channelId };
     } catch (error) {
@@ -71,10 +74,14 @@ export class VoiceService {
   /**
    * Get or create session for a voice channel
    */
-  async getOrCreateSession(channelId: string, guildId: string, userId: string): Promise<SessionData> {
+  async getOrCreateSession(
+    channelId: string,
+    guildId: string,
+    userId: string
+  ): Promise<SessionData> {
     try {
       let session = await this.redisService.getSession(channelId);
-      
+
       if (!session) {
         session = await this.createSession(channelId, guildId, userId);
       } else {
@@ -92,10 +99,16 @@ export class VoiceService {
   /**
    * Join a voice channel
    */
-  async joinVoiceChannel(channelId: string, guildId: string, client: any): Promise<any> {
+  async joinVoiceChannel(
+    channelId: string,
+    guildId: string,
+    client: any
+  ): Promise<any> {
     try {
-      logger.info(`Attempting to join voice channel ${channelId} in guild ${guildId}`);
-      
+      logger.info(
+        `Attempting to join voice channel ${channelId} in guild ${guildId}`
+      );
+
       const guild = client.guilds.cache.get(guildId);
       if (!guild) {
         throw new Error(`Guild ${guildId} not found`);
@@ -119,7 +132,7 @@ export class VoiceService {
             entersState(connection, VoiceConnectionStatus.Signalling, 5_000),
             entersState(connection, VoiceConnectionStatus.Connecting, 5_000),
           ]);
-        } catch (error) {
+        } catch {
           connection.destroy();
         }
       });
@@ -136,15 +149,17 @@ export class VoiceService {
    */
   private analyzeContentForVoiceStyle(text: string): VoiceStyle {
     const lowerText = text.toLowerCase();
-    
+
     // Check for expressions in brackets first
     const expressionRegex = /\[([^\]]+)\]/g;
-    const expressions = [...lowerText.matchAll(expressionRegex)].map(match => match[1]);
-    
+    const expressions = [...lowerText.matchAll(expressionRegex)].map(
+      match => match[1]
+    );
+
     // If expressions are found, use them to determine voice style
     if (expressions.length > 0) {
       const firstExpression = expressions[0];
-      
+
       // Map expressions to voice styles
       switch (firstExpression) {
         case 'sarcastically':
@@ -176,53 +191,114 @@ export class VoiceService {
           return { voice: 'fable', speed: 0.85, dramatic: true };
       }
     }
-    
+
     // Combat scenes - use dramatic voice (English and Indonesian keywords)
-    if (lowerText.includes('sword') || lowerText.includes('attack') || lowerText.includes('battle') || 
-        lowerText.includes('enemy') || lowerText.includes('fight') || lowerText.includes('combat') ||
-        lowerText.includes('blood') || lowerText.includes('weapon') || lowerText.includes('spell') ||
-        lowerText.includes('pedang') || lowerText.includes('serang') || lowerText.includes('pertempuran') ||
-        lowerText.includes('musuh') || lowerText.includes('berkelahi') || lowerText.includes('perang') ||
-        lowerText.includes('darah') || lowerText.includes('senjata') || lowerText.includes('sihir')) {
+    if (
+      lowerText.includes('sword') ||
+      lowerText.includes('attack') ||
+      lowerText.includes('battle') ||
+      lowerText.includes('enemy') ||
+      lowerText.includes('fight') ||
+      lowerText.includes('combat') ||
+      lowerText.includes('blood') ||
+      lowerText.includes('weapon') ||
+      lowerText.includes('spell') ||
+      lowerText.includes('pedang') ||
+      lowerText.includes('serang') ||
+      lowerText.includes('pertempuran') ||
+      lowerText.includes('musuh') ||
+      lowerText.includes('berkelahi') ||
+      lowerText.includes('perang') ||
+      lowerText.includes('darah') ||
+      lowerText.includes('senjata') ||
+      lowerText.includes('sihir')
+    ) {
       return { voice: 'onyx', speed: 0.9, dramatic: true };
     }
-    
+
     // Mysterious/magical scenes - use mystical voice (English and Indonesian keywords)
-    if (lowerText.includes('magic') || lowerText.includes('spell') || lowerText.includes('mysterious') ||
-        lowerText.includes('ancient') || lowerText.includes('portal') || lowerText.includes('enchanted') ||
-        lowerText.includes('crystal') || lowerText.includes('rune') || lowerText.includes('arcane') ||
-        lowerText.includes('sihir') || lowerText.includes('mantra') || lowerText.includes('misterius') ||
-        lowerText.includes('kuno') || lowerText.includes('portal') || lowerText.includes('terpesona') ||
-        lowerText.includes('kristal') || lowerText.includes('rune') || lowerText.includes('arcane')) {
+    if (
+      lowerText.includes('magic') ||
+      lowerText.includes('spell') ||
+      lowerText.includes('mysterious') ||
+      lowerText.includes('ancient') ||
+      lowerText.includes('portal') ||
+      lowerText.includes('enchanted') ||
+      lowerText.includes('crystal') ||
+      lowerText.includes('rune') ||
+      lowerText.includes('arcane') ||
+      lowerText.includes('sihir') ||
+      lowerText.includes('mantra') ||
+      lowerText.includes('misterius') ||
+      lowerText.includes('kuno') ||
+      lowerText.includes('portal') ||
+      lowerText.includes('terpesona') ||
+      lowerText.includes('kristal') ||
+      lowerText.includes('rune') ||
+      lowerText.includes('arcane')
+    ) {
       return { voice: 'shimmer', speed: 0.85, dramatic: true };
     }
-    
+
     // NPC dialogue - use character voice (English and Indonesian keywords)
-    if (lowerText.includes('"') || lowerText.includes('says') || lowerText.includes('speaks') ||
-        lowerText.includes('replies') || lowerText.includes('responds') || lowerText.includes('asks') ||
-        lowerText.includes('berkata') || lowerText.includes('berbicara') || lowerText.includes('menjawab') ||
-        lowerText.includes('bertanya') || lowerText.includes('mengatakan')) {
+    if (
+      lowerText.includes('"') ||
+      lowerText.includes('says') ||
+      lowerText.includes('speaks') ||
+      lowerText.includes('replies') ||
+      lowerText.includes('responds') ||
+      lowerText.includes('asks') ||
+      lowerText.includes('berkata') ||
+      lowerText.includes('berbicara') ||
+      lowerText.includes('menjawab') ||
+      lowerText.includes('bertanya') ||
+      lowerText.includes('mengatakan')
+    ) {
       return { voice: 'echo', speed: 0.95, dramatic: false };
     }
-    
+
     // Environmental descriptions - use atmospheric voice (English and Indonesian keywords)
-    if (lowerText.includes('forest') || lowerText.includes('cave') || lowerText.includes('mountain') ||
-        lowerText.includes('river') || lowerText.includes('castle') || lowerText.includes('dungeon') ||
-        lowerText.includes('dark') || lowerText.includes('light') || lowerText.includes('wind') ||
-        lowerText.includes('hutan') || lowerText.includes('gua') || lowerText.includes('gunung') ||
-        lowerText.includes('sungai') || lowerText.includes('kastil') || lowerText.includes('dungeon') ||
-        lowerText.includes('gelap') || lowerText.includes('cahaya') || lowerText.includes('angin')) {
+    if (
+      lowerText.includes('forest') ||
+      lowerText.includes('cave') ||
+      lowerText.includes('mountain') ||
+      lowerText.includes('river') ||
+      lowerText.includes('castle') ||
+      lowerText.includes('dungeon') ||
+      lowerText.includes('dark') ||
+      lowerText.includes('light') ||
+      lowerText.includes('wind') ||
+      lowerText.includes('hutan') ||
+      lowerText.includes('gua') ||
+      lowerText.includes('gunung') ||
+      lowerText.includes('sungai') ||
+      lowerText.includes('kastil') ||
+      lowerText.includes('dungeon') ||
+      lowerText.includes('gelap') ||
+      lowerText.includes('cahaya') ||
+      lowerText.includes('angin')
+    ) {
       return { voice: 'fable', speed: 0.9, dramatic: false };
     }
-    
+
     // Tense/dramatic scenes (English and Indonesian keywords)
-    if (lowerText.includes('danger') || lowerText.includes('threat') || lowerText.includes('warning') ||
-        lowerText.includes('suddenly') || lowerText.includes('unexpected') || lowerText.includes('surprise') ||
-        lowerText.includes('bahaya') || lowerText.includes('ancaman') || lowerText.includes('peringatan') ||
-        lowerText.includes('tiba-tiba') || lowerText.includes('tak terduga') || lowerText.includes('kejutan')) {
+    if (
+      lowerText.includes('danger') ||
+      lowerText.includes('threat') ||
+      lowerText.includes('warning') ||
+      lowerText.includes('suddenly') ||
+      lowerText.includes('unexpected') ||
+      lowerText.includes('surprise') ||
+      lowerText.includes('bahaya') ||
+      lowerText.includes('ancaman') ||
+      lowerText.includes('peringatan') ||
+      lowerText.includes('tiba-tiba') ||
+      lowerText.includes('tak terduga') ||
+      lowerText.includes('kejutan')
+    ) {
       return { voice: 'nova', speed: 0.8, dramatic: true };
     }
-    
+
     // Default - use standard voice
     return { voice: 'alloy', speed: 1.0, dramatic: false };
   }
@@ -230,10 +306,15 @@ export class VoiceService {
   /**
    * Convert text to speech using TTS AI Service with dramatic styling
    */
-  async textToSpeech(text: string, style?: VoiceStyle, language?: string, sessionId?: string): Promise<Buffer> {
+  async textToSpeech(
+    text: string,
+    style?: VoiceStyle,
+    language?: string,
+    sessionId?: string
+  ): Promise<Buffer> {
     try {
       const voiceStyle = style || this.analyzeContentForVoiceStyle(text);
-      
+
       // Add dramatic pauses and emphasis for dramatic scenes
       let processedText = text;
       if (voiceStyle.dramatic) {
@@ -244,13 +325,13 @@ export class VoiceService {
       }
 
       // Use ElevenLabs voice ID if available, otherwise use OpenAI voice names
-      const voiceId = this.ttsAiService.isElevenLabsEnabled() 
+      const voiceId = this.ttsAiService.isElevenLabsEnabled()
         ? this.ttsAiService.getVoiceIdForLanguage(language || 'en')
         : voiceStyle.voice;
 
       const response = await this.ttsAiService.generateSpeech({
-        model: this.ttsAiService.isElevenLabsEnabled() 
-          ? botConfig.elevenLabs.modelId 
+        model: this.ttsAiService.isElevenLabsEnabled()
+          ? botConfig.elevenLabs.modelId
           : 'tts-1',
         voice: voiceId,
         input: processedText,
@@ -270,7 +351,15 @@ export class VoiceService {
   /**
    * Speak text in a voice channel with dramatic narration
    */
-  async speakInChannel(channelId: string, guildId: string, text: string, client?: any, style?: VoiceStyle, language?: string, sessionId?: string): Promise<void> {
+  async speakInChannel(
+    channelId: string,
+    guildId: string,
+    text: string,
+    client?: any,
+    style?: VoiceStyle,
+    language?: string,
+    sessionId?: string
+  ): Promise<void> {
     try {
       // Get or create voice connection
       let connection = getVoiceConnection(guildId);
@@ -286,8 +375,13 @@ export class VoiceService {
 
       try {
         // Convert text to speech with dramatic styling
-        const audioBuffer = await this.textToSpeech(text, style, language, sessionId);
-        
+        const audioBuffer = await this.textToSpeech(
+          text,
+          style,
+          language,
+          sessionId
+        );
+
         // Create a readable stream from the buffer
         const { Readable } = await import('stream');
         const stream = Readable.from(audioBuffer);
@@ -308,9 +402,12 @@ export class VoiceService {
             reject(error);
           });
         });
-      } catch (ffmpegError) {
+      } catch {
         // If FFmpeg is not available, just log the message
-        logger.warn('FFmpeg not available - voice disabled. Message would be:', text);
+        logger.warn(
+          'FFmpeg not available - voice disabled. Message would be:',
+          text
+        );
         logger.info(`Voice message: "${text}"`);
         return;
       }
@@ -324,26 +421,52 @@ export class VoiceService {
   /**
    * Narrate a story event with dramatic voice
    */
-  async narrateStoryEvent(channelId: string, guildId: string, storyText: string, client?: any, language?: string, sessionId?: string): Promise<void> {
+  async narrateStoryEvent(
+    channelId: string,
+    guildId: string,
+    storyText: string,
+    client?: any,
+    language?: string,
+    sessionId?: string
+  ): Promise<void> {
     try {
-      logger.info(`Narrating story event in voice channel ${channelId}: ${storyText.substring(0, 100)}...`);
-      
+      logger.info(
+        `Narrating story event in voice channel ${channelId}: ${storyText.substring(0, 100)}...`
+      );
+
       // Analyze the story content for appropriate voice style
       const voiceStyle = this.analyzeContentForVoiceStyle(storyText);
-      
+
       // Add dramatic narration prefix for certain types of content
       let narratedText = storyText;
       if (voiceStyle.dramatic) {
-        if (storyText.toLowerCase().includes('battle') || storyText.toLowerCase().includes('combat')) {
+        if (
+          storyText.toLowerCase().includes('battle') ||
+          storyText.toLowerCase().includes('combat')
+        ) {
           narratedText = `*The tension mounts as* ${storyText}`;
-        } else if (storyText.toLowerCase().includes('magic') || storyText.toLowerCase().includes('spell')) {
+        } else if (
+          storyText.toLowerCase().includes('magic') ||
+          storyText.toLowerCase().includes('spell')
+        ) {
           narratedText = `*With mystical energy swirling* ${storyText}`;
-        } else if (storyText.toLowerCase().includes('suddenly') || storyText.toLowerCase().includes('unexpected')) {
+        } else if (
+          storyText.toLowerCase().includes('suddenly') ||
+          storyText.toLowerCase().includes('unexpected')
+        ) {
           narratedText = `*In a shocking turn of events* ${storyText}`;
         }
       }
-      
-      await this.speakInChannel(channelId, guildId, narratedText, client, voiceStyle, language, sessionId);
+
+      await this.speakInChannel(
+        channelId,
+        guildId,
+        narratedText,
+        client,
+        voiceStyle,
+        language,
+        sessionId
+      );
     } catch (error) {
       logger.error('Error narrating story event:', error);
     }
@@ -356,14 +479,16 @@ export class VoiceService {
     try {
       // Remove user from session participants
       await this.redisService.removeParticipant(channelId, userId);
-      
+
       // Get updated session to check if any participants remain
       const session = await this.redisService.getSession(channelId);
-      
+
       if (session && session.participants.length === 0) {
         // No participants left, delete session
         await this.redisService.deleteSession(channelId);
-        logger.info(`Session ended for channel ${channelId} - no participants remaining`);
+        logger.info(
+          `Session ended for channel ${channelId} - no participants remaining`
+        );
       }
 
       const connection = getVoiceConnection(guildId);
@@ -426,4 +551,4 @@ export class VoiceService {
       throw error;
     }
   }
-} 
+}

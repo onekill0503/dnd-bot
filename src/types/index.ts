@@ -1,4 +1,22 @@
-import { Client, Collection, ChatInputCommandInteraction, SlashCommandBuilder } from 'discord.js';
+// Re-export all types from individual files
+export * from './enums';
+export * from './elevenlabs';
+
+// Main application types
+import {
+  Client,
+  Collection,
+  ChatInputCommandInteraction,
+  SlashCommandBuilder,
+} from 'discord.js';
+import {
+  PlayerStatus,
+  SessionStatus,
+  QuestStatus,
+  ItemRarity,
+  ItemType,
+  SessionEndReason,
+} from './enums';
 
 export interface Command {
   data: SlashCommandBuilder;
@@ -8,8 +26,6 @@ export interface Command {
 export interface BotClient extends Client {
   commands: Collection<string, Command>;
 }
-
-export type PlayerStatus = 'alive' | 'dead' | 'unconscious';
 
 export interface PlayerCharacter {
   userId: string;
@@ -70,20 +86,23 @@ export interface StorySession {
   activeQuests: string[];
   npcs: string[];
   sessionHistory: string[];
-  status: 'character_creation' | 'active' | 'ended';
+  status: SessionStatus;
   players: Map<string, PlayerCharacter>;
   maxPlayers: number;
   voiceChannelId?: string;
   guildId?: string;
   playerActions: Map<string, string[]>; // Track actions by player ID
-  pendingActions: Map<string, { action: string; diceResults?: string; timestamp: number }>; // Track pending actions
+  pendingActions: Map<
+    string,
+    { action: string; diceResults?: string; timestamp: number }
+  >; // Track pending actions
   language: string; // Selected language for the session
   // Enhanced story context tracking
   storySummary: string; // Current story summary
   currentScene: string; // Current scene description
   importantEvents: string[]; // Important story events that should be remembered
   npcInteractions: Map<string, string[]>; // NPC interactions by NPC name
-  questProgress: Map<string, { status: 'active' | 'completed' | 'failed', progress: string }>; // Quest tracking
+  questProgress: Map<string, { status: QuestStatus; progress: string }>; // Quest tracking
   environmentalState: Map<string, string>; // Environmental changes and state
   lastStoryBeat: string; // Last major story beat
   sessionRound: number; // Current round number for tracking progression
@@ -104,8 +123,8 @@ export interface InventoryItem {
   quantity: number;
   weight: number;
   value: number;
-  rarity: 'common' | 'uncommon' | 'rare' | 'very rare' | 'legendary';
-  type: 'weapon' | 'armor' | 'tool' | 'consumable' | 'treasure' | 'gear' | 'magic item';
+  rarity: ItemRarity;
+  type: ItemType;
   properties?: string[];
   attunement?: boolean;
   equipped?: boolean;
@@ -190,7 +209,7 @@ export interface PlayerDeathEvent {
 }
 
 export interface SessionEndEvent {
-  reason: 'all_players_dead' | 'session_ended' | 'dm_ended';
+  reason: SessionEndReason;
   deadPlayers: PlayerDeathEvent[];
   timestamp: number;
 }
@@ -204,4 +223,4 @@ export interface ActionAnalysis {
   savingThrow?: string;
   attackRoll?: boolean;
   damageRoll?: string;
-} 
+}

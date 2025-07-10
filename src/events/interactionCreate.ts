@@ -1,4 +1,10 @@
-import { Events, ModalBuilder, TextInputBuilder, TextInputStyle, ActionRowBuilder } from 'discord.js';
+import {
+  Events,
+  ModalBuilder,
+  TextInputBuilder,
+  TextInputStyle,
+  ActionRowBuilder,
+} from 'discord.js';
 import type { Interaction } from 'discord.js';
 import { logger } from '../utils/logger';
 
@@ -20,9 +26,9 @@ export const execute = async (interaction: Interaction) => {
       await command.execute(interaction);
     } catch (error) {
       logger.error(`Error executing ${interaction.commandName}:`, error);
-      
+
       const errorMessage = 'There was an error while executing this command!';
-      
+
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp({ content: errorMessage, flags: 64 });
       } else {
@@ -35,7 +41,7 @@ export const execute = async (interaction: Interaction) => {
   // Handle button clicks
   if (interaction.isButton()) {
     logger.info(`Button clicked: ${interaction.customId}`);
-    
+
     try {
       if (interaction.customId === 'player_action') {
         // Create modal for player action
@@ -47,7 +53,7 @@ export const execute = async (interaction: Interaction) => {
           .setCustomId('player_action')
           .setLabel('What does your character do?')
           .setStyle(TextInputStyle.Paragraph)
-          .setPlaceholder('Describe your character\'s action in detail...')
+          .setPlaceholder("Describe your character's action in detail...")
           .setRequired(true)
           .setMaxLength(1000);
 
@@ -59,8 +65,10 @@ export const execute = async (interaction: Interaction) => {
           .setRequired(false)
           .setMaxLength(200);
 
-        const firstActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(actionInput);
-        const secondActionRow = new ActionRowBuilder<TextInputBuilder>().addComponents(diceInput);
+        const firstActionRow =
+          new ActionRowBuilder<TextInputBuilder>().addComponents(actionInput);
+        const secondActionRow =
+          new ActionRowBuilder<TextInputBuilder>().addComponents(diceInput);
 
         modal.addComponents(firstActionRow, secondActionRow);
 
@@ -68,16 +76,16 @@ export const execute = async (interaction: Interaction) => {
       }
     } catch (error) {
       logger.error('Error handling button click:', error);
-      
+
       if (interaction.replied || interaction.deferred) {
-        await interaction.followUp({ 
+        await interaction.followUp({
           content: 'There was an error processing your button click.',
-          flags: 64 
+          flags: 64,
         });
       } else {
-        await interaction.reply({ 
+        await interaction.reply({
           content: 'There was an error processing your button click.',
-          flags: 64 
+          flags: 64,
         });
       }
     }
@@ -87,7 +95,7 @@ export const execute = async (interaction: Interaction) => {
   // Handle modal submits
   if (interaction.isModalSubmit()) {
     logger.info(`Modal submit received: ${interaction.customId}`);
-    
+
     try {
       if (interaction.customId === 'character_creation_modal') {
         // Import and execute the modal submit handler
@@ -100,19 +108,19 @@ export const execute = async (interaction: Interaction) => {
       }
     } catch (error) {
       logger.error('Error handling modal submit:', error);
-      
+
       if (interaction.replied || interaction.deferred) {
-        await interaction.followUp({ 
+        await interaction.followUp({
           content: 'There was an error processing your modal submission.',
-          flags: 64 
+          flags: 64,
         });
       } else {
-        await interaction.reply({ 
+        await interaction.reply({
           content: 'There was an error processing your modal submission.',
-          flags: 64 
+          flags: 64,
         });
       }
     }
     return;
   }
-}; 
+};
