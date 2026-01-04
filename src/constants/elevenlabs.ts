@@ -13,45 +13,10 @@ export const LANGUAGE_VOICE_IDS: Record<string, string[]> = {
     'VR6AewLTigWG4xSOukaG', // Arnold
     'yoZ06aMxZJJ28mfd3POQ', // Josh
     'TxGEqnHWrfWFTfGW9XjX', // Elli
-    'VR6AewLTigWG4xSOukaG', // Arnold
-    'pNInz6obpgDQGcFmaJgB', // Adam
-    '21m00Tcm4TlvDq8ikWAM', // Rachel
   ],
   id: [
-    'pNInz6obpgDQGcFmaJgB', // Adam (English voice for Indonesian)
-    '21m00Tcm4TlvDq8ikWAM', // Rachel
-    'AZnzlk1XvdvUeBnXmlld', // Domi
-  ],
-  fr: [
-    'pNInz6obpgDQGcFmaJgB', // Adam (English voice for French)
-    '21m00Tcm4TlvDq8ikWAM', // Rachel
-    'AZnzlk1XvdvUeBnXmlld', // Domi
-  ],
-  es: [
-    'pNInz6obpgDQGcFmaJgB', // Adam (English voice for Spanish)
-    '21m00Tcm4TlvDq8ikWAM', // Rachel
-    'AZnzlk1XvdvUeBnXmlld', // Domi
-  ],
-  de: [
-    'pNInz6obpgDQGcFmaJgB', // Adam (English voice for German)
-    '21m00Tcm4TlvDq8ikWAM', // Rachel
-    'AZnzlk1XvdvUeBnXmlld', // Domi
-  ],
-  ja: [
-    'pNInz6obpgDQGcFmaJgB', // Adam (English voice for Japanese)
-    '21m00Tcm4TlvDq8ikWAM', // Rachel
-    'AZnzlk1XvdvUeBnXmlld', // Domi
-  ],
-  ko: [
-    'pNInz6obpgDQGcFmaJgB', // Adam (English voice for Korean)
-    '21m00Tcm4TlvDq8ikWAM', // Rachel
-    'AZnzlk1XvdvUeBnXmlld', // Domi
-  ],
-  zh: [
-    'pNInz6obpgDQGcFmaJgB', // Adam (English voice for Chinese)
-    '21m00Tcm4TlvDq8ikWAM', // Rachel
-    'AZnzlk1XvdvUeBnXmlld', // Domi
-  ],
+    '1k39YpzqXZn52BgyLyGO',
+  ]
 };
 
 export const LANGUAGE_ISO_CODES: Record<string, string> = {
