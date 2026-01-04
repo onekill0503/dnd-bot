@@ -344,7 +344,12 @@ export class VoiceService {
       const arrayBuffer = await response.arrayBuffer();
       return Buffer.from(arrayBuffer);
     } catch (error) {
-      logger.error('Error converting text to speech:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      logger.error(`Error converting text to speech: ${errorMessage}`);
+      if (errorStack) {
+        logger.error(`Stack trace: ${errorStack}`);
+      }
       throw error;
     }
   }

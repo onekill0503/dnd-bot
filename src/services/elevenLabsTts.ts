@@ -1,36 +1,34 @@
 import { botConfig } from '../config/config';
 import { logger } from '../utils/logger';
-import type {
-  ElevenLabsVoice,
-  ElevenLabsGenerateSpeechParams,
-  ElevenLabsSingleSpeechParams,
-} from '../types/elevenlabs';
+import type { ElevenLabsVoice } from '../types/elevenlabs';
+import { ELEVEN_LABS_BASE_URL } from '../constants/elevenlabs';
 import {
-  ELEVEN_LABS_BASE_URL,
-  ELEVEN_LABS_DEFAULT_SETTINGS,
-} from '../constants/elevenlabs';
-import {
-  parseExpressions,
-  cleanText,
-  getVoiceSettingsForExpression,
   getConsistentVoiceId,
   getVoiceIdsForLanguage,
   getIsoCode,
 } from '../utils/elevenlabsUtils';
 
+export interface ElevenLabsGenerateSpeechParams {
+  text: string;
+  voiceId?: string;
+  modelId?: string;
+  language?: string;
+  sessionId?: string;
+}
+
 export class ElevenLabsTtsService {
   private apiKey: string;
-  private sessionVoices: Map<string, string> = new Map(); // Store voice IDs per session
+  private sessionVoices: Map<string, string> = new Map();
 
   constructor() {
     this.apiKey = botConfig.elevenLabs.apiKey;
 
-    // Debug logging
     logger.info(`ElevenLabsTtsService initialized:`);
     logger.info(`- API Key set: ${!!this.apiKey}`);
     logger.info(`- Config enabled: ${botConfig.elevenLabs.enabled}`);
     logger.info(`- USE_ELEVEN env var: ${process.env.USE_ELEVEN}`);
     logger.info(`- Service enabled: ${this.isEnabled()}`);
+    logger.info(`- Model ID: ${botConfig.elevenLabs.modelId}`);
   }
 
   /**
@@ -55,7 +53,7 @@ export class ElevenLabsTtsService {
   }
 
   /**
-   * Generate speech with expression support and language-specific voice selection
+   * Generate speech using ElevenLabs API
    */
   async generateSpeech(
     params: ElevenLabsGenerateSpeechParams
@@ -65,113 +63,63 @@ export class ElevenLabsTtsService {
         text,
         voiceId,
         modelId = botConfig.elevenLabs.modelId,
-        style,
-        language = 'en', // Default to English
-        sessionId = 'default', // Default session ID
+        language = 'en',
+        sessionId = 'default',
       } = params;
 
-      // Parse expressions in the text
-      const expressions = parseExpressions(text);
-      const cleanedText = cleanText(text);
-
       // Get language-specific voice ID if not provided
-      let finalVoiceId = voiceId;
-      if (!finalVoiceId) {
-        finalVoiceId = this.getSessionVoiceId(sessionId, language);
-      }
+      const finalVoiceId = voiceId || this.getSessionVoiceId(sessionId, language);
 
-      // If no expressions found, use default settings
-      if (expressions.length === 0) {
-        return this.generateSingleSpeech({
-          text: cleanedText,
-          voiceId: finalVoiceId,
-          modelId,
-          style: style || {},
-          language,
-        });
-      }
+      // Convert bot language to ISO 639-1 code
+      const isoCode = getIsoCode(language);
 
-      // For now, we'll use the first expression found for the entire text
-      // In a more advanced implementation, you could split the text and generate multiple audio segments
-      const firstExpression = expressions[0];
-      const expressionSettings = getVoiceSettingsForExpression(
-        firstExpression.expression
-      );
+      const requestBody: Record<string, unknown> = {
+        text,
+        model_id: modelId,
+      };
+
+      // Add language parameter if supported by the model
+      if (modelId.includes('multilingual')) {
+        requestBody.language = isoCode;
+      }
 
       logger.info(
-        `Generating speech with expression: ${firstExpression.expression} for language: ${language}`
+        `Generating speech for language: ${language} (ISO: ${isoCode}) with voice: ${finalVoiceId}`
+      );
+      logger.info(`Request body: ${JSON.stringify(requestBody)}`);
+
+      const response = await fetch(
+        `${ELEVEN_LABS_BASE_URL}/text-to-speech/${finalVoiceId}`,
+        {
+          method: 'POST',
+          headers: {
+            Accept: 'audio/mpeg',
+            'Content-Type': 'application/json',
+            'xi-api-key': this.apiKey,
+          },
+          body: JSON.stringify(requestBody),
+        }
       );
 
-      return this.generateSingleSpeech({
-        text: cleanedText,
-        voiceId: finalVoiceId,
-        modelId,
-        style: {
-          ...expressionSettings,
-          ...style,
-        },
-        language,
-      });
+      logger.info(`ElevenLabs API response status: ${response.status}`);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        logger.error(`ElevenLabs API error response: ${errorText}`);
+        throw new Error(
+          `ElevenLabs API error: ${response.status} - ${errorText}`
+        );
+      }
+
+      return response;
     } catch (error) {
-      logger.error('Error generating ElevenLabs speech:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error(`ElevenLabs fetch error: ${errorMessage}`);
+      if (error instanceof Error && error.stack) {
+        logger.error(`Stack trace: ${error.stack}`);
+      }
       throw error;
     }
-  }
-
-  /**
-   * Generate single speech segment with language support
-   */
-  private async generateSingleSpeech(
-    params: ElevenLabsSingleSpeechParams
-  ): Promise<Response> {
-    const { text, voiceId, modelId, style, language } = params;
-
-    // Convert bot language to ISO 639-1 code
-    const isoCode = getIsoCode(language);
-
-    const requestBody = {
-      text,
-      model_id: modelId,
-      voice_settings: {
-        stability: style.stability || ELEVEN_LABS_DEFAULT_SETTINGS.stability,
-        similarity_boost:
-          style.similarityBoost || ELEVEN_LABS_DEFAULT_SETTINGS.similarityBoost,
-        style: style.style || ELEVEN_LABS_DEFAULT_SETTINGS.style,
-        use_speaker_boost:
-          style.useSpeakerBoost ?? ELEVEN_LABS_DEFAULT_SETTINGS.useSpeakerBoost,
-      },
-    };
-
-    // Add language parameter if supported by the model
-    if (modelId.includes('multilingual')) {
-      (requestBody as any).language = isoCode;
-    }
-
-    logger.info(
-      `Generating speech for language: ${language} (ISO: ${isoCode}) with voice: ${voiceId}`
-    );
-
-    const response = await fetch(
-      `${ELEVEN_LABS_BASE_URL}/text-to-speech/${voiceId}`,
-      {
-        method: 'POST',
-        headers: {
-          Accept: 'audio/mpeg',
-          'Content-Type': 'application/json',
-          'xi-api-key': this.apiKey,
-        },
-        body: JSON.stringify(requestBody),
-      }
-    );
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(
-        `ElevenLabs API error: ${response.status} - ${errorText}`
-      );
-    }
-
-    return response;
   }
 
   /**
@@ -205,7 +153,6 @@ export class ElevenLabsTtsService {
       const allVoices = await this.getVoices();
       const voiceIds = getVoiceIdsForLanguage(language);
 
-      // Filter voices that match the language's voice IDs
       return allVoices.filter((voice: ElevenLabsVoice) =>
         voiceIds.includes(voice.voice_id)
       );
