@@ -7,6 +7,13 @@ import * as interactionCreateEvent from './src/events/interactionCreate';
 import * as buttonInteractionEvent from './src/events/buttonInteraction';
 import { SessionManager } from './src/services/sessionManager';
 
+// Configure FFmpeg for @discordjs/voice
+import ffmpegPath from 'ffmpeg-static';
+if (ffmpegPath) {
+  process.env.FFMPEG_PATH = ffmpegPath;
+  logger.info(`FFmpeg configured at: ${ffmpegPath}`);
+}
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,

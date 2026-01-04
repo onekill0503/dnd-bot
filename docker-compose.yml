@@ -1,15 +1,33 @@
-version: '3.8'
-
 services:
   dnd-bot:
     build: .
     container_name: dnd-bot
     restart: unless-stopped
     env_file: .env
+    environment:
+      - REDIS_HOST=redis
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     networks:
       - dnd-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: dnd-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - 6378:6379
+    volumes:
+      - redis-data:/data
+    networks:
+      - dnd-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 networks:
   dnd-network:
@@ -17,4 +35,4 @@ networks:
 
 volumes:
   redis-data:
-    driver: local 
+    driver: local

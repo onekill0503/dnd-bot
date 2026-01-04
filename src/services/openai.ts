@@ -21,9 +21,35 @@ import { QuestStatus, SessionStatus, PlayerStatus } from '../types/enums';
 
 // Helper function to check if expression tags should be used
 function shouldUseExpressionTags(): boolean {
-  return (
-    botConfig.elevenLabs.enabled && botConfig.elevenLabs.modelId === 'eleven_v3'
-  );
+  return botConfig.elevenLabs.enabled;
+}
+
+// Expression tag instruction for DM prompts - uses ONLY simple English tags
+const EXPRESSION_TAG_INSTRUCTION = `
+CRITICAL - VOICE EXPRESSION TAGS:
+You MUST use ONLY these simple English expression tags (exactly as written):
+[laughs], [giggles], [chuckles], [whispers], [sighs], [gasps], [excited], [sarcastic], [angry], [sad], [crying], [curious], [mischievously], [fearful], [mysterious], [clears throat], [snorts]
+
+RULES:
+- Use tags EXACTLY as listed above - do NOT modify or translate them
+- Place tags at the START of the emotional phrase
+- NEVER create custom tags like [suara gemuruh] or [napas terengah-engah]
+- NEVER use descriptive phrases in brackets
+- Keep tags in English even if narration is in another language
+
+CORRECT examples:
+- [whispers] "The forest is watching us..."
+- [excited] "You found the treasure!"
+- [laughs] "That was unexpected!"
+
+WRONG examples (NEVER do this):
+- [suara rendah seperti guntur] - WRONG, use [mysterious] instead
+- [napas terengah-engah] - WRONG, use [gasps] instead
+- [berbisik pelan] - WRONG, use [whispers] instead
+`;
+
+function getExpressionTagInstruction(): string {
+  return shouldUseExpressionTags() ? EXPRESSION_TAG_INSTRUCTION : '';
 }
 
 export class OpenAIService {
@@ -568,28 +594,14 @@ ${Array.from(session.players.values())
 
 Create an engaging opening scene that introduces the party to their first adventure. Set the atmosphere, describe the environment, and present an initial hook or quest that will draw the players into the story. Make it immersive and exciting.
 
-${
-  shouldUseExpressionTags()
-    ? `IMPORTANT: Include voice expression tags in your text to make the narration more expressive. Use these tags:
-- [whispers] for quiet, secretive speech
-- [sarcastic] for sarcastic or mocking tones
-- [excited] for enthusiastic or energetic speech
-- [crying] for emotional or sad moments
-- [laughs] for humorous situations
-- [sighs] for tired or resigned moments
-- [curious] for inquisitive or questioning tones
-- [mischievously] for playful or sneaky behavior
-
-Example: "Seorang tetua desa, Nyonya Elara, mendekati kalian dengan wajah penuh kecemasan. [whispers]'Hutan itu berbicara,' bisiknya."`
-    : ''
-}
+${getExpressionTagInstruction()}
 
 Keep your response to 2-3 paragraphs maximum.`;
 
       const response = await this.dmAi.chat([
         {
           role: 'system',
-          content: `You are a creative and experienced Dungeon Master who creates immersive D&D experiences. Focus on atmosphere, description, and engaging storytelling.${shouldUseExpressionTags() ? ' ALWAYS include voice expression tags like [whispers], [excited], [sarcastic], etc. to make the narration more expressive and engaging.' : ''} ${languageInstruction}`,
+          content: `You are a creative and experienced Dungeon Master who creates immersive D&D experiences. Focus on atmosphere, description, and engaging storytelling.${shouldUseExpressionTags() ? ' Use ONLY simple English expression tags like [whispers], [laughs], [excited], [sarcastic] - never create custom or translated tags.' : ''} ${languageInstruction}`,
         },
         {
           role: 'user',
@@ -781,28 +793,14 @@ Respond as the DM, describing what happens next based on the player's action. Co
 - Maintaining story coherence with previous events
 ${automaticRoll ? `- The dice roll result and whether it was successful (${automaticRoll.success ? 'SUCCESS' : 'FAILURE'})` : ''}
 
-${
-  shouldUseExpressionTags()
-    ? `IMPORTANT: Include voice expression tags in your text to make the narration more expressive. Use these tags:
-- [whispers] for quiet, secretive speech
-- [sarcastic] for sarcastic or mocking tones
-- [excited] for enthusiastic or energetic speech
-- [crying] for emotional or sad moments
-- [laughs] for humorous situations
-- [sighs] for tired or resigned moments
-- [curious] for inquisitive or questioning tones
-- [mischievously] for playful or sneaky behavior
-
-Example: "Seorang tetua desa, Nyonya Elara, mendekati kalian dengan wajah penuh kecemasan. [whispers]'Hutan itu berbicara,' bisiknya."`
-    : ''
-}
+${getExpressionTagInstruction()}
 
 Keep your response to 3-4 paragraphs and make it engaging and descriptive. Ensure the story flows naturally from previous events.`;
 
       const response = await this.dmAi.chat([
         {
           role: 'system',
-          content: `You are a responsive Dungeon Master who maintains excellent story continuity and adapts the story based on player actions. Be descriptive, atmospheric, and ensure each response builds upon previous events and maintains narrative coherence.${shouldUseExpressionTags() ? ' ALWAYS include voice expression tags like [whispers], [excited], [sarcastic], etc. to make the narration more expressive and engaging.' : ''} ${this.getLanguageInstruction(session.language)}`,
+          content: `You are a responsive Dungeon Master who maintains excellent story continuity and adapts the story based on player actions. Be descriptive, atmospheric, and ensure each response builds upon previous events and maintains narrative coherence.${shouldUseExpressionTags() ? ' Use ONLY simple English expression tags like [whispers], [laughs], [excited], [sarcastic] - never create custom or translated tags.' : ''} ${this.getLanguageInstruction(session.language)}`,
         },
         {
           role: 'user',
@@ -1078,28 +1076,14 @@ Respond as the DM, describing what happens next based on ALL the players' action
 - Maintaining story coherence with the entire session history
 ${diceRollsList.length > 0 ? '- The results of the automatic dice rolls and their impact on the story' : ''}
 
-${
-  shouldUseExpressionTags()
-    ? `IMPORTANT: Include voice expression tags in your text to make the narration more expressive. Use these tags:
-- [whispers] for quiet, secretive speech
-- [sarcastic] for sarcastic or mocking tones
-- [excited] for enthusiastic or energetic speech
-- [crying] for emotional or sad moments
-- [laughs] for humorous situations
-- [sighs] for tired or resigned moments
-- [curious] for inquisitive or questioning tones
-- [mischievously] for playful or sneaky behavior
-
-Example: "Seorang tetua desa, Nyonya Elara, mendekati kalian dengan wajah penuh kecemasan. [whispers]'Hutan itu berbicara,' bisiknya."`
-    : ''
-}
+${getExpressionTagInstruction()}
 
 Keep your response to 4-5 paragraphs and make it engaging and descriptive. Address how the different actions work together or conflict, and ensure the story flows naturally from all previous events.`;
 
       const response = await this.dmAi.chat([
         {
           role: 'system',
-          content: `You are a responsive Dungeon Master who maintains excellent story continuity and adapts the story based on player actions. Be descriptive, atmospheric, and ensure each response builds upon previous events and maintains narrative coherence.${shouldUseExpressionTags() ? ' ALWAYS include voice expression tags like [whispers], [excited], [sarcastic], etc. to make the narration more expressive and engaging.' : ''} ${languageInstruction}`,
+          content: `You are a responsive Dungeon Master who maintains excellent story continuity and adapts the story based on player actions. Be descriptive, atmospheric, and ensure each response builds upon previous events and maintains narrative coherence.${shouldUseExpressionTags() ? ' Use ONLY simple English expression tags like [whispers], [laughs], [excited], [sarcastic] - never create custom or translated tags.' : ''} ${languageInstruction}`,
         },
         {
           role: 'user',
@@ -1262,28 +1246,14 @@ For ${encounterType} encounters:
 - Exploration: Describe the environment, hidden dangers, and discoveries
 - Puzzle: Present a logical or magical puzzle with clues
 
-${
-  shouldUseExpressionTags()
-    ? `IMPORTANT: Include voice expression tags in your text to make the narration more expressive. Use these tags:
-- [whispers] for quiet, secretive speech
-- [sarcastic] for sarcastic or mocking tones
-- [excited] for enthusiastic or energetic speech
-- [crying] for emotional or sad moments
-- [laughs] for humorous situations
-- [sighs] for tired or resigned moments
-- [curious] for inquisitive or questioning tones
-- [mischievously] for playful or sneaky behavior
-
-Example: "Seorang tetua desa, Nyonya Elara, mendekati kalian dengan wajah penuh kecemasan. [whispers]'Hutan itu berbicara,' bisiknya."`
-    : ''
-}
+${getExpressionTagInstruction()}
 
 Make it engaging and appropriate for the party's level. Keep your response to 2-3 paragraphs.`;
 
       const response = await this.dmAi.chat([
         {
           role: 'system',
-          content: `You are a creative Dungeon Master who designs engaging encounters that challenge and entertain players.${shouldUseExpressionTags() ? ' ALWAYS include voice expression tags like [whispers], [excited], [sarcastic], etc. to make the narration more expressive and engaging.' : ''} ${languageInstruction}`,
+          content: `You are a creative Dungeon Master who designs engaging encounters that challenge and entertain players.${shouldUseExpressionTags() ? ' Use ONLY simple English expression tags like [whispers], [laughs], [excited], [sarcastic] - never create custom or translated tags.' : ''} ${languageInstruction}`,
         },
         {
           role: 'user',

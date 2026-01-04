@@ -60,14 +60,30 @@ export const DICE_TYPES = [
   'd100',
 ] as const;
 
+// Valid ElevenLabs V3 expression tags - ONLY simple English words
+// See: https://elevenlabs.io/docs/overview/capabilities/text-to-speech/best-practices
 export const EXPRESSION_TAGS = [
+  // Laughter variants
+  '[laughs]',
+  '[giggles]',
+  '[chuckles]',
+  '[wheezing]',
+  // Vocal techniques
   '[whispers]',
+  '[sighs]',
+  '[exhales]',
+  '[gasps]',
+  // Emotional states
   '[sarcastic]',
   '[excited]',
   '[angry]',
   '[sad]',
+  '[crying]',
+  '[curious]',
+  '[mischievously]',
   '[fearful]',
   '[mysterious]',
-  '[giggles]',
-  '[laughing]',
+  // Actions
+  '[clears throat]',
+  '[snorts]',
 ] as const;

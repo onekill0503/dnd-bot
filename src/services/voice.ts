@@ -6,6 +6,7 @@ import {
   VoiceConnectionStatus,
   entersState,
   getVoiceConnection,
+  StreamType,
 } from '@discordjs/voice';
 import { botConfig } from '../config/config';
 import { logger } from '../utils/logger';
@@ -385,7 +386,9 @@ export class VoiceService {
         // Create a readable stream from the buffer
         const { Readable } = await import('stream');
         const stream = Readable.from(audioBuffer);
-        const resource = createAudioResource(stream);
+        const resource = createAudioResource(stream, {
+          inputType: StreamType.Arbitrary, // Let FFmpeg handle the audio format
+        });
 
         // Play the audio
         this.audioPlayer.play(resource);
